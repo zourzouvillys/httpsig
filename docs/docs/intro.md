@@ -19,13 +19,13 @@ HTTP Message Signatures solve this by cryptographically signing specific parts o
 
 ## Supported Languages
 
-| Language   | Package                                  | Status      |
-|------------|------------------------------------------|-------------|
-| Go         | `github.com/zourzouvillys/httpsig/golang`| In progress |
-| TypeScript | `@zourzouvillys/httpsig`                 | Planned     |
-| Java       | `com.zourzouvillys:httpsig`              | Planned     |
-| Swift      | `HTTPSig`                                | Planned     |
-| Kotlin     | `com.zourzouvillys:httpsig-kotlin`       | Planned     |
+| Language   | Package                                  | Integrations |
+|------------|------------------------------------------|--------------|
+| Go         | `github.com/zourzouvillys/httpsig/golang`| net/http (RoundTripper + Handler middleware) |
+| TypeScript | `@zourzouvillys/httpsig`                 | fetch, axios, undici |
+| Java       | `com.zourzouvillys:httpsig`              | OkHttp, JDK HttpClient, Spring WebClient |
+| Swift      | `HTTPSig` (SPM)                          | URLSession, Alamofire |
+| Kotlin     | `com.zourzouvillys:httpsig-kotlin`       | OkHttp, Ktor |
 
 All five implementations share the same test vectors derived from RFC 9421 Appendix B, ensuring cross-language interoperability.
 
@@ -44,6 +44,7 @@ All five implementations share the same test vectors derived from RFC 9421 Appen
 - Header field signing with `;sf`, `;bs`, `;key`, and `;req` parameters
 - Non-extractable key support: HSM/PKCS#11, Apple Secure Enclave, Android Keystore, Web Crypto API
 - HTTP client integrations for each language (middleware, interceptors, filter functions)
+- Verification security: algorithm consistency checks, future-dated signature rejection (`maxClockSkew`), replay protection via `maxAge` and `expires`
 
 ## Next Steps
 
