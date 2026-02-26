@@ -5,6 +5,7 @@ on:
     paths: ['golang/**', 'testdata/**', '.github/workflows/go.yml']
   pull_request:
     paths: ['golang/**', 'testdata/**', '.github/workflows/go.yml']
+  workflow_dispatch:
 
 jobs:
   test:

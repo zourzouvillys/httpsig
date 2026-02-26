@@ -5,6 +5,7 @@ on:
     paths: ['kotlin/**', 'testdata/**', '.github/workflows/kotlin.yml']
   pull_request:
     paths: ['kotlin/**', 'testdata/**', '.github/workflows/kotlin.yml']
+  workflow_dispatch:
 
 jobs:
   test:

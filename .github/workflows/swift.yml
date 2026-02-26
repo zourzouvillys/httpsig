@@ -5,6 +5,7 @@ on:
     paths: ['swift/**', 'testdata/**', '.github/workflows/swift.yml']
   pull_request:
     paths: ['swift/**', 'testdata/**', '.github/workflows/swift.yml']
+  workflow_dispatch:
 
 jobs:
   test:

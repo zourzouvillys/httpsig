@@ -5,6 +5,7 @@ on:
     paths: ['typescript/**', 'testdata/**', '.github/workflows/typescript.yml']
   pull_request:
     paths: ['typescript/**', 'testdata/**', '.github/workflows/typescript.yml']
+  workflow_dispatch:
 
 jobs:
   test:

@@ -5,6 +5,7 @@ on:
     paths: ['java/**', 'testdata/**', '.github/workflows/java.yml']
   pull_request:
     paths: ['java/**', 'testdata/**', '.github/workflows/java.yml']
+  workflow_dispatch:
 
 jobs:
   test:
