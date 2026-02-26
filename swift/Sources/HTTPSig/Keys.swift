@@ -1,0 +1,321 @@
+import Foundation
+import CryptoKit
+@preconcurrency import Security
+
+// MARK: - Ed25519
+
+/// Ed25519 signing key backed by CryptoKit.
+public struct Ed25519SigningKey: SigningKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .ed25519
+    private let key: Curve25519.Signing.PrivateKey
+
+    public init(keyId: String, privateKey: Curve25519.Signing.PrivateKey) {
+        self.keyId = keyId
+        self.key = privateKey
+    }
+
+    /// Load from a PKCS#8 DER-encoded private key.
+    public init(keyId: String, pkcs8DER data: Data) throws {
+        self.keyId = keyId
+        // PKCS#8 wrapping for Ed25519: the raw 32 bytes are at the end of the DER
+        // structure. The prefix is 16 bytes for Ed25519 PKCS#8.
+        // 30 2e (SEQUENCE, 46 bytes)
+        //   02 01 00 (INTEGER 0 = version)
+        //   30 05 (SEQUENCE, 5 bytes)
+        //     06 03 2b 65 70 (OID 1.3.101.112 = Ed25519)
+        //   04 22 (OCTET STRING, 34 bytes)
+        //     04 20 (OCTET STRING, 32 bytes)
+        //       <32 bytes of raw key>
+        guard data.count >= 18 else {
+            throw HttpSigError.invalidKey("Ed25519 PKCS#8 key too short")
+        }
+        // Find the raw key: last 32 bytes, preceded by 04 20
+        let rawKeyStart = data.count - 32
+        guard rawKeyStart >= 2,
+              data[rawKeyStart - 2] == 0x04,
+              data[rawKeyStart - 1] == 0x20 else {
+            throw HttpSigError.invalidKey("cannot extract Ed25519 raw key from PKCS#8")
+        }
+        let rawKey = data[rawKeyStart...]
+        self.key = try Curve25519.Signing.PrivateKey(rawRepresentation: rawKey)
+    }
+
+    public func sign(_ data: Data) throws -> Data {
+        try Data(key.signature(for: data))
+    }
+}
+
+/// Ed25519 verifying key backed by CryptoKit.
+public struct Ed25519VerifyingKey: VerifyingKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .ed25519
+    private let key: Curve25519.Signing.PublicKey
+
+    public init(keyId: String, publicKey: Curve25519.Signing.PublicKey) {
+        self.keyId = keyId
+        self.key = publicKey
+    }
+
+    /// Load from an SPKI DER-encoded public key.
+    public init(keyId: String, spkiDER data: Data) throws {
+        self.keyId = keyId
+        // SPKI for Ed25519: 12-byte prefix + 32 bytes raw key
+        // 30 2a (SEQUENCE, 42 bytes)
+        //   30 05 (SEQUENCE, 5 bytes)
+        //     06 03 2b 65 70 (OID 1.3.101.112)
+        //   03 21 00 (BIT STRING, 33 bytes, 0 unused bits)
+        //     <32 bytes raw key>
+        guard data.count >= 14 else {
+            throw HttpSigError.invalidKey("Ed25519 SPKI key too short")
+        }
+        let rawKey = data[(data.count - 32)...]
+        self.key = try Curve25519.Signing.PublicKey(rawRepresentation: rawKey)
+    }
+
+    public func verify(_ data: Data, signature: Data) throws -> Bool {
+        key.isValidSignature(signature, for: data)
+    }
+}
+
+// MARK: - ECDSA P-256
+
+/// ECDSA P-256 signing key backed by CryptoKit.
+public struct ECDSAP256SigningKey: SigningKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .ecdsaP256Sha256
+    private let key: P256.Signing.PrivateKey
+
+    public init(keyId: String, privateKey: P256.Signing.PrivateKey) {
+        self.keyId = keyId
+        self.key = privateKey
+    }
+
+    /// Load from a SEC1 (OpenSSL EC) DER-encoded private key.
+    public init(keyId: String, derRepresentation data: Data) throws {
+        self.keyId = keyId
+        self.key = try P256.Signing.PrivateKey(derRepresentation: data)
+    }
+
+    public func sign(_ data: Data) throws -> Data {
+        // CryptoKit P256 produces DER-encoded signatures by default.
+        // RFC 9421 requires raw r||s format (64 bytes).
+        let sig = try key.signature(for: SHA256.hash(data: data))
+        return sig.rawRepresentation
+    }
+}
+
+/// ECDSA P-256 verifying key backed by CryptoKit.
+public struct ECDSAP256VerifyingKey: VerifyingKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .ecdsaP256Sha256
+    private let key: P256.Signing.PublicKey
+
+    public init(keyId: String, publicKey: P256.Signing.PublicKey) {
+        self.keyId = keyId
+        self.key = publicKey
+    }
+
+    /// Load from an SPKI DER-encoded public key.
+    public init(keyId: String, derRepresentation data: Data) throws {
+        self.keyId = keyId
+        self.key = try P256.Signing.PublicKey(derRepresentation: data)
+    }
+
+    public func verify(_ data: Data, signature: Data) throws -> Bool {
+        guard signature.count == 64 else { return false }
+        let ecSig = try P256.Signing.ECDSASignature(rawRepresentation: signature)
+        return key.isValidSignature(ecSig, for: SHA256.hash(data: data))
+    }
+}
+
+// MARK: - RSA-PSS-SHA512
+
+/// RSA-PSS-SHA512 signing key backed by the Security framework.
+public struct RSAPSSSigningKey: SigningKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .rsaPssSha512
+    private let secKey: SecKey
+
+    public init(keyId: String, secKey: SecKey) {
+        self.keyId = keyId
+        self.secKey = secKey
+    }
+
+    /// Load from a PKCS#8 DER-encoded RSA private key.
+    public init(keyId: String, pkcs8DER data: Data) throws {
+        self.keyId = keyId
+        // Strip the PKCS#8 wrapper to get the raw PKCS#1 key that Security framework expects.
+        let pkcs1 = try Self.extractPKCS1FromPKCS8(data)
+        let attrs: [String: Any] = [
+            kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+            kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
+        ]
+        var error: Unmanaged<CFError>?
+        guard let key = SecKeyCreateWithData(pkcs1 as CFData, attrs as CFDictionary, &error) else {
+            let desc = error?.takeRetainedValue().localizedDescription ?? "unknown"
+            throw HttpSigError.invalidKey("RSA private key import failed: \(desc)")
+        }
+        self.secKey = key
+    }
+
+    public func sign(_ data: Data) throws -> Data {
+        var error: Unmanaged<CFError>?
+        guard let sig = SecKeyCreateSignature(
+            secKey,
+            .rsaSignatureMessagePSSSHA512,
+            data as CFData,
+            &error
+        ) else {
+            let desc = error?.takeRetainedValue().localizedDescription ?? "unknown"
+            throw HttpSigError.invalidKey("RSA-PSS sign failed: \(desc)")
+        }
+        return sig as Data
+    }
+
+    /// Parse PKCS#8 to extract the inner PKCS#1 RSAPrivateKey.
+    /// PKCS#8 wraps it in: SEQUENCE { version, AlgorithmIdentifier, OCTET STRING { pkcs1 } }
+    private static func extractPKCS1FromPKCS8(_ data: Data) throws -> Data {
+        // Simple ASN.1 DER parser, just enough to unwrap PKCS#8.
+        var offset = 0
+        let bytes = Array(data)
+
+        func readTag() throws -> UInt8 {
+            guard offset < bytes.count else {
+                throw HttpSigError.invalidKey("unexpected end of ASN.1 data")
+            }
+            let tag = bytes[offset]; offset += 1
+            return tag
+        }
+
+        func readLength() throws -> Int {
+            guard offset < bytes.count else {
+                throw HttpSigError.invalidKey("unexpected end of ASN.1 data")
+            }
+            let first = bytes[offset]; offset += 1
+            if first < 0x80 { return Int(first) }
+            let numBytes = Int(first & 0x7f)
+            guard offset + numBytes <= bytes.count else {
+                throw HttpSigError.invalidKey("unexpected end of ASN.1 length")
+            }
+            var length = 0
+            for i in 0..<numBytes {
+                length = (length << 8) | Int(bytes[offset + i])
+            }
+            offset += numBytes
+            return length
+        }
+
+        // Outer SEQUENCE
+        let outerTag = try readTag()
+        guard outerTag == 0x30 else {
+            throw HttpSigError.invalidKey("expected SEQUENCE, got \(outerTag)")
+        }
+        _ = try readLength()
+
+        // Version INTEGER
+        let verTag = try readTag()
+        guard verTag == 0x02 else {
+            throw HttpSigError.invalidKey("expected INTEGER for version, got \(verTag)")
+        }
+        let verLen = try readLength()
+        offset += verLen // skip version bytes
+
+        // AlgorithmIdentifier SEQUENCE
+        let algTag = try readTag()
+        guard algTag == 0x30 else {
+            throw HttpSigError.invalidKey("expected SEQUENCE for AlgorithmIdentifier, got \(algTag)")
+        }
+        let algLen = try readLength()
+        offset += algLen // skip algorithm identifier
+
+        // OCTET STRING containing the PKCS#1 key
+        let octetTag = try readTag()
+        guard octetTag == 0x04 else {
+            throw HttpSigError.invalidKey("expected OCTET STRING, got \(octetTag)")
+        }
+        let octetLen = try readLength()
+        guard offset + octetLen <= bytes.count else {
+            throw HttpSigError.invalidKey("OCTET STRING extends past data")
+        }
+        return Data(bytes[offset..<(offset + octetLen)])
+    }
+}
+
+/// RSA-PSS-SHA512 verifying key backed by the Security framework.
+public struct RSAPSSVerifyingKey: VerifyingKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .rsaPssSha512
+    private let secKey: SecKey
+
+    public init(keyId: String, secKey: SecKey) {
+        self.keyId = keyId
+        self.secKey = secKey
+    }
+
+    /// Load from an SPKI DER-encoded RSA public key.
+    public init(keyId: String, spkiDER data: Data) throws {
+        self.keyId = keyId
+        let attrs: [String: Any] = [
+            kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+            kSecAttrKeyClass as String: kSecAttrKeyClassPublic,
+        ]
+        var error: Unmanaged<CFError>?
+        guard let key = SecKeyCreateWithData(data as CFData, attrs as CFDictionary, &error) else {
+            let desc = error?.takeRetainedValue().localizedDescription ?? "unknown"
+            throw HttpSigError.invalidKey("RSA public key import failed: \(desc)")
+        }
+        self.secKey = key
+    }
+
+    public func verify(_ data: Data, signature: Data) throws -> Bool {
+        var error: Unmanaged<CFError>?
+        let result = SecKeyVerifySignature(
+            secKey,
+            .rsaSignatureMessagePSSSHA512,
+            data as CFData,
+            signature as CFData,
+            &error
+        )
+        // Verification failure is not an error, it just returns false
+        return result
+    }
+}
+
+// MARK: - HMAC-SHA256
+
+/// HMAC-SHA256 symmetric key. Implements both SigningKey and VerifyingKey.
+public struct HMACSHA256Key: SigningKey, VerifyingKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .hmacSha256
+    private let secret: SymmetricKey
+
+    public init(keyId: String, secret: Data) {
+        self.keyId = keyId
+        self.secret = SymmetricKey(data: secret)
+    }
+
+    public func sign(_ data: Data) throws -> Data {
+        let mac = CryptoKit.HMAC<SHA256>.authenticationCode(for: data, using: secret)
+        return Data(mac)
+    }
+
+    public func verify(_ data: Data, signature: Data) throws -> Bool {
+        CryptoKit.HMAC<SHA256>.isValidAuthenticationCode(signature, authenticating: data, using: secret)
+    }
+}
+
+// MARK: - PEM Helpers
+
+public enum PEMUtils {
+    /// Decode a PEM file to raw DER data.
+    public static func decodePEM(_ pem: String) throws -> Data {
+        let lines = pem.components(separatedBy: .newlines)
+            .filter { !$0.hasPrefix("-----") && !$0.isEmpty }
+        let b64 = lines.joined()
+        guard let data = Data(base64Encoded: b64) else {
+            throw HttpSigError.invalidKey("invalid base64 in PEM")
+        }
+        return data
+    }
+}

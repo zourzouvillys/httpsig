@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.zourzouvillys.httpsig.jdkhttp.HttpSigningTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-02-26T09:48:53.017Z" hostname="theos-Apple-MacBook-Pro" time="0.024">
+  <properties/>
+  <testcase name="customLabel()" classname="com.zourzouvillys.httpsig.jdkhttp.HttpSigningTest" time="0.02"/>
+  <testcase name="signAndVerifyRoundTrip()" classname="com.zourzouvillys.httpsig.jdkhttp.HttpSigningTest" time="0.002"/>
+  <testcase name="responseMessageAdapter()" classname="com.zourzouvillys.httpsig.jdkhttp.HttpSigningTest" time="0.001"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

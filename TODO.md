@@ -20,10 +20,10 @@
 - [x] Java CI workflow
 
 ## Phase 4: Java Integrations + Swift Core
-- [ ] Java OkHttp interceptor, JDK HttpClient wrapper, Spring WebClient filter
-- [ ] Swift core (SPM): SFV, components, base, algorithms (CryptoKit + Security), signer/verifier + Secure Enclave
-- [ ] Swift tests passing all vectors
-- [ ] Swift CI workflow
+- [x] Java OkHttp interceptor, JDK HttpClient wrapper, Spring WebClient filter
+- [x] Swift core (SPM): SFV, components, base, algorithms (CryptoKit + Security), signer/verifier + Secure Enclave
+- [x] Swift tests passing all vectors
+- [x] Swift CI workflow
 
 ## Phase 5: Swift Integrations + Kotlin Core
 - [ ] Swift URLSession integration, Alamofire adapter

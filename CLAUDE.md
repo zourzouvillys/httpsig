@@ -45,6 +45,7 @@ Each language implements the same core abstractions:
 - Go tests: `*_test.go` files in `golang/`.
 - TypeScript tests: `test/*.test.ts` files in `typescript/`, run with vitest.
 - Java tests: `src/test/java/` in `java/lib/`, run with `./gradlew test` from `java/`.
+- Swift tests: `Tests/HTTPSigTests/` in `swift/`, run with `swift test` from `swift/`.
 
 ## Conventions
 
@@ -57,5 +58,10 @@ Each language implements the same core abstractions:
 - Java API: `Signer.sign()`, `Verifier.verify()`, `Keys.*` factory methods, `RawMessage` for testing
 - Java uses `SignatureParameters.builder()` pattern with `component()`, `keyId()`, `createdEpoch()`, etc.
 - Java algorithm param in SignatureParameters is optional; test vectors don't include `alg=` in params
+- Java integrations: `integrations/okhttp/` (SigningInterceptor), `integrations/jdk-http/` (HttpSigning), `integrations/spring-webclient/` (SigningFilterFunction)
+- Swift package: `HTTPSig`, SPM, macOS 13+/iOS 16+, Swift 6.0+
+- Swift API: `Signer.sign(msg:label:params:key:reqMsg:)`, `Verifier.verify(msg:provider:options:reqMsg:)`
+- Swift crypto: CryptoKit for Ed25519/P-256/HMAC, Security framework for RSA-PSS
+- Swift note: Apple CryptoKit Ed25519 uses randomized signing (side-channel resistance), so Ed25519 signatures may differ from Go/Java. Round-trip verification always works.
 - Error types: use language-idiomatic error handling (Go errors, TS exceptions, Java exceptions, etc.)
 - Keep implementations independent. No shared code generation or cross-language tooling.
