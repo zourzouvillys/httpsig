@@ -1,0 +1,39 @@
+name: Release Swift
+
+on:
+  push:
+    tags: ['swift/v*']
+
+jobs:
+  release:
+    runs-on: macos-14
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test
+        working-directory: swift
+        run: swift test
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/swift/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Swift v${{ steps.version.outputs.version }}"
+          tag_name: ${{ github.ref }}
+          generate_release_notes: true
+          body: |
+            ## Swift v${{ steps.version.outputs.version }}
+
+            ```swift
+            // Package.swift
+            dependencies: [
+                .package(url: "https://github.com/zourzouvillys/httpsig.git", from: "${{ steps.version.outputs.version }}")
+            ]
+            ```
+
+            SPM resolves packages via git tags. No registry publication needed.

@@ -38,9 +38,9 @@
 - [x] Docs CI workflow, cross-language CI workflow
 
 ## Phase 7: Release Automation + Polish
-- [ ] Release workflows for all 5 languages
+- [x] Release workflows for all 5 languages
 - [ ] Maven Central setup (GPG, Sonatype credentials)
 - [ ] npm publish setup
-- [ ] GitHub Release templates
-- [ ] README badges
-- [ ] SECURITY.md vulnerability reporting process
+- [x] GitHub Release templates
+- [x] README badges
+- [x] SECURITY.md vulnerability reporting process

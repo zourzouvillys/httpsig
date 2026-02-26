@@ -1,0 +1,60 @@
+name: Release Java
+
+on:
+  push:
+    tags: ['java/v*']
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Test
+        working-directory: java
+        run: ./gradlew check
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/java/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to Maven Central
+        working-directory: java
+        run: ./gradlew publishAllPublicationsToMavenCentralRepository
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.SONATYPE_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.SONATYPE_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.GPG_SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.GPG_SIGNING_PASSWORD }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Java v${{ steps.version.outputs.version }}"
+          tag_name: ${{ github.ref }}
+          generate_release_notes: true
+          body: |
+            ## Java v${{ steps.version.outputs.version }}
+
+            ```kotlin
+            // Gradle
+            implementation("com.zourzouvillys:httpsig:${{ steps.version.outputs.version }}")
+            ```
+
+            ```xml
+            <!-- Maven -->
+            <dependency>
+              <groupId>com.zourzouvillys</groupId>
+              <artifactId>httpsig</artifactId>
+              <version>${{ steps.version.outputs.version }}</version>
+            </dependency>
+            ```

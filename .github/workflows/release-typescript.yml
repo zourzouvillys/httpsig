@@ -1,0 +1,56 @@
+name: Release TypeScript
+
+on:
+  push:
+    tags: ['ts/v*']
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+
+      - name: Install and test
+        working-directory: typescript
+        run: |
+          npm ci
+          npm test
+
+      - name: Build
+        working-directory: typescript
+        run: npm run build
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/ts/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Set package version
+        working-directory: typescript
+        run: npm version "${{ steps.version.outputs.version }}" --no-git-tag-version
+
+      - name: Publish to npm
+        working-directory: typescript
+        run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "TypeScript v${{ steps.version.outputs.version }}"
+          tag_name: ${{ github.ref }}
+          generate_release_notes: true
+          body: |
+            ## TypeScript v${{ steps.version.outputs.version }}
+
+            ```bash
+            npm install @zourzouvillys/httpsig@${{ steps.version.outputs.version }}
+            ```

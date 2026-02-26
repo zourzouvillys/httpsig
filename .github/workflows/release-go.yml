@@ -1,0 +1,40 @@
+name: Release Go
+
+on:
+  push:
+    tags: ['go/v*']
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Test
+        working-directory: golang
+        run: go test -race ./...
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/go/}" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Go ${{ steps.version.outputs.version }}"
+          tag_name: ${{ github.ref }}
+          generate_release_notes: true
+          body: |
+            ## Go ${{ steps.version.outputs.version }}
+
+            ```bash
+            go get github.com/zourzouvillys/httpsig/golang@${{ steps.version.outputs.version }}
+            ```
+
+            Go modules are published automatically via [proxy.golang.org](https://proxy.golang.org).

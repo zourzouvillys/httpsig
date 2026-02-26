@@ -227,6 +227,44 @@ opts := &httpsig.VerifyOptions{
 }
 ```
 
+## Development
+
+```bash
+# Run all tests with race detector
+go test -race ./...
+
+# Run only vector tests
+go test -run TestVector -v ./...
+
+# Static analysis
+go vet ./...
+```
+
+### Project structure
+
+```
+golang/
+  algorithm.go         Algorithm constants
+  base.go              Signature base construction
+  components.go        Component extraction (derived + headers)
+  context.go           VerifyResult context helpers
+  digest.go            Content-Digest (RFC 9530)
+  errors.go            Error types
+  key.go               SigningKey, VerifyingKey, key constructors
+  message.go           HttpMessage interface + Request/Response adapters
+  middleware.go         VerifyMiddleware, RequireSignature
+  pem.go               PEM parsing utilities
+  sfv.go               Structured Field Values (RFC 8941) subset
+  signer.go            SignMessage, SignatureInputHeader, SignatureHeader
+  transport.go         Signing http.RoundTripper
+  verifier.go          VerifyMessage, VerifyOptions
+  vector_test.go       Shared RFC 9421 test vectors
+```
+
+### Test vectors
+
+Tests load shared vectors from `../testdata/vectors/*.json`. These are RFC 9421 Appendix B test cases shared across all five language implementations.
+
 ## License
 
 Apache License 2.0.
