@@ -70,5 +70,14 @@ Each language implements the same core abstractions:
 - Kotlin idioms: sealed class for `Algorithm` (data objects), `fun interface` for `KeyProvider` (SAM), data classes, `when` exhaustive matching
 - Kotlin uses same JCA crypto as Java (RSASSA-PSS, Ed25519, SHA256withECDSAinP1363Format, HmacSHA256)
 - Kotlin RSA key loading: try "RSA" KeyFactory first, fall back to "RSASSA-PSS" (private key has RSASSA-PSS OID, public key has plain RSA OID)
+- Kotlin integrations: `integrations/okhttp/` (SigningInterceptor), `integrations/ktor/` (HttpSig client plugin)
 - Error types: use language-idiomatic error handling (Go errors, TS exceptions, Java exceptions, etc.)
 - Keep implementations independent. No shared code generation or cross-language tooling.
+
+## Documentation
+
+- Docusaurus 3.x site at `docs/`, build with `cd docs && npm run build`
+- Landing page at `docs/src/pages/index.tsx`
+- Content at `docs/docs/`: intro, getting-started (per language), concepts, guides
+- CI: `docs.yml` builds on push, deploys to GitHub Pages on main
+- Cross-language CI: `cross-language.yml` runs weekly (Monday 6am UTC), tests all 5 languages

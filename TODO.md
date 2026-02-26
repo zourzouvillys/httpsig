@@ -32,10 +32,10 @@
 - [x] Kotlin CI workflow
 
 ## Phase 6: Kotlin Integrations + Docs Site
-- [ ] Kotlin OkHttp interceptor, Ktor plugin
-- [ ] Docusaurus site: landing page, getting started, concepts, guides
+- [x] Kotlin OkHttp interceptor, Ktor plugin
+- [x] Docusaurus site: landing page, getting started, concepts, guides
 - [ ] API docs generation (godoc, typedoc, javadoc, DocC, dokka)
-- [ ] Docs CI workflow, cross-language CI workflow
+- [x] Docs CI workflow, cross-language CI workflow
 
 ## Phase 7: Release Automation + Polish
 - [ ] Release workflows for all 5 languages
