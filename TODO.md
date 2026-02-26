@@ -26,10 +26,10 @@
 - [x] Swift CI workflow
 
 ## Phase 5: Swift Integrations + Kotlin Core
-- [ ] Swift URLSession integration, Alamofire adapter
-- [ ] Kotlin core (Gradle multi-module, JVM): SFV, components, base, algorithms, Kotlin-idiomatic API
-- [ ] Kotlin tests passing all vectors
-- [ ] Kotlin CI workflow
+- [x] Swift URLSession integration, Alamofire adapter
+- [x] Kotlin core (Gradle multi-module, JVM): SFV, components, base, algorithms, Kotlin-idiomatic API
+- [x] Kotlin tests passing all vectors
+- [x] Kotlin CI workflow
 
 ## Phase 6: Kotlin Integrations + Docs Site
 - [ ] Kotlin OkHttp interceptor, Ktor plugin

@@ -21,8 +21,9 @@ java/bin/
 
 # Kotlin
 kotlin/.gradle/
+kotlin/.kotlin/
 kotlin/build/
-kotlin/*/build/
+kotlin/**/build/
 kotlin/bin/
 
 # Swift
