@@ -23,6 +23,7 @@ public final class Verifier {
      *
      * @param requiredComponents components that must be covered by the signature (or null/empty to skip)
      * @param maxAge             reject signatures older than this (based on created, or null to skip)
+     * @param maxClockSkew       reject signatures with created more than this far in the future (or null to skip)
      * @param rejectExpired      if true, reject signatures past their expires time
      * @param requiredLabel      if set, only verify the signature with this specific label
      * @param now                clock source for age/expiry checks
@@ -30,6 +31,7 @@ public final class Verifier {
     public record VerifyOptions(
         List<ComponentIdentifier> requiredComponents,
         Duration maxAge,
+        Duration maxClockSkew,
         Boolean rejectExpired,
         String requiredLabel,
         Supplier<Instant> now
@@ -39,7 +41,7 @@ public final class Verifier {
         }
 
         public static VerifyOptions defaults() {
-            return new VerifyOptions(null, null, null, null, null);
+            return new VerifyOptions(null, null, null, null, null, null);
         }
     }
 
@@ -179,6 +181,12 @@ public final class Verifier {
             Instant createdTime = Instant.ofEpochSecond(created);
             if (now.isAfter(createdTime.plus(options.maxAge()))) {
                 throw new HttpSigException("signature too old");
+            }
+        }
+        if (options.maxClockSkew() != null && created != null) {
+            Instant createdTime = Instant.ofEpochSecond(created);
+            if (createdTime.isAfter(now.plus(options.maxClockSkew()))) {
+                throw new HttpSigException("signature future-dated");
             }
         }
         if (Boolean.TRUE.equals(options.rejectExpired()) && expires != null) {

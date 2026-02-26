@@ -104,6 +104,8 @@ export interface VerifyResult {
 export interface VerifyOptions {
   requiredComponents?: ComponentIdentifier[];
   maxAgeMs?: number;
+  /** Maximum allowed forward clock skew in milliseconds. Rejects signatures with created > now + maxClockSkewMs. */
+  maxClockSkewMs?: number;
   rejectExpired?: boolean;
   requiredLabel?: string;
   now?: () => number;

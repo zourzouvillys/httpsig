@@ -56,10 +56,7 @@ request.setHeader("Signature", Signer.signatureHeader(result));
 ```java
 KeyProvider provider = (keyId, algorithm) -> Keys.ed25519Verifying(keyId, publicKey);
 
-var options = new VerifyOptions();
-options.setMaxAge(Duration.ofMinutes(5));
-
-var result = Verifier.verify(message, provider, options, null);
+var result = Verifier.verify(message, provider, Verifier.VerifyOptions.defaults(), null);
 ```
 
 ### Integrations

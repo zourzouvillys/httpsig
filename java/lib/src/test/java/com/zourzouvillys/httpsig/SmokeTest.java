@@ -191,6 +191,7 @@ class SmokeTest {
             java.time.Duration.ofSeconds(60),
             null,
             null,
+            null,
             null
         );
         assertThrows(HttpSigException.class,
@@ -235,7 +236,7 @@ class SmokeTest {
             ));
 
         // verify sig2 specifically
-        var options = new Verifier.VerifyOptions(null, null, null, "sig2", null);
+        var options = new Verifier.VerifyOptions(null, null, null, null, "sig2", null);
         var verifyResult = Verifier.verify(signedRequest, (keyId, alg) -> {
             if ("key2".equals(keyId)) return key2;
             return null;

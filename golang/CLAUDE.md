@@ -15,7 +15,9 @@ go vet ./...           # static analysis
 - Go 1.22+, zero external dependencies
 - `KeyProvider` is a function type: `func(keyID string, algorithm Algorithm) (VerifyingKey, error)`
 - `NewSignerKey()` supports `crypto.Signer` for HSM/PKCS#11 backends
-- Errors use sentinel values: `ErrMissingSignature`, `ErrInvalidSignature`, `ErrKeyNotFound`, etc.
+- Errors use sentinel values: `ErrMissingSignature`, `ErrInvalidSignature`, `ErrKeyNotFound`, `ErrSignatureFutureDated`, `ErrAlgorithmMismatch`, etc.
+- `VerifyOptions.MaxClockSkew` rejects future-dated `created` timestamps
+- Verifier checks `alg` parameter against resolved key's `Algorithm()` and returns key-derived values in `VerifyResult`
 - Tests are `*_test.go` files alongside source (standard Go convention)
 - `vector_test.go` loads shared vectors from `../testdata/vectors/*.json`
 - `Int64Ptr()` / `StringPtr()` helper functions for optional fields in `SignatureParameters`

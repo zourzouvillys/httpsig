@@ -8,6 +8,9 @@ public struct VerifyOptions: Sendable {
     /// Reject signatures older than this (based on created). Nil means no age check.
     public var maxAge: TimeInterval?
 
+    /// Maximum allowed forward clock skew in seconds. Rejects signatures with created > now + maxClockSkew. Nil means no check.
+    public var maxClockSkew: TimeInterval?
+
     /// If true, reject signatures past their expires time. Defaults to true.
     public var rejectExpired: Bool
 
@@ -20,12 +23,14 @@ public struct VerifyOptions: Sendable {
     public init(
         requiredComponents: [ComponentIdentifier]? = nil,
         maxAge: TimeInterval? = nil,
+        maxClockSkew: TimeInterval? = nil,
         rejectExpired: Bool = true,
         requiredLabel: String? = nil,
         now: @escaping @Sendable () -> Date = { Date() }
     ) {
         self.requiredComponents = requiredComponents
         self.maxAge = maxAge
+        self.maxClockSkew = maxClockSkew
         self.rejectExpired = rejectExpired
         self.requiredLabel = requiredLabel
         self.now = now
@@ -181,6 +186,12 @@ public enum Verifier {
             let createdDate = Date(timeIntervalSince1970: TimeInterval(created))
             if now.timeIntervalSince(createdDate) > maxAge {
                 throw HttpSigError.signatureExpired
+            }
+        }
+        if let maxClockSkew = options.maxClockSkew, let created {
+            let createdDate = Date(timeIntervalSince1970: TimeInterval(created))
+            if createdDate.timeIntervalSince(now) > maxClockSkew {
+                throw HttpSigError.signatureFutureDated
             }
         }
         if options.rejectExpired, let expires {

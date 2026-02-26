@@ -99,6 +99,7 @@ opts := &httpsig.VerifyOptions{
         httpsig.Component("@authority"),
     },
     MaxAge:        5 * time.Minute,
+    MaxClockSkew:  30 * time.Second, // reject signatures created >30s in the future
     RejectExpired: httpsig.BoolPtr(true),
 }
 ```
@@ -113,6 +114,7 @@ import { component } from '@zourzouvillys/httpsig';
 const opts: VerifyOptions = {
   requiredComponents: [component('@method'), component('@authority')],
   maxAgeMs: 5 * 60 * 1000,
+  maxClockSkewMs: 30_000, // reject signatures created >30s in the future
   rejectExpired: true,
 };
 ```
@@ -127,6 +129,7 @@ var opts = new Verifier.VerifyOptions(
         ComponentIdentifier.of("@authority")
     ),
     Duration.ofMinutes(5),
+    Duration.ofSeconds(30), // reject signatures created >30s in the future
     true,
     null,
     null
@@ -139,7 +142,8 @@ var opts = new Verifier.VerifyOptions(
 ```swift
 let opts = VerifyOptions(
     requiredComponents: [.init("@method"), .init("@authority")],
-    maxAge: 300
+    maxAge: 300,
+    maxClockSkew: 30 // reject signatures created >30s in the future
 )
 ```
 
@@ -153,6 +157,7 @@ val opts = Verifier.VerifyOptions(
         ComponentIdentifier.of("@authority"),
     ),
     maxAge = Duration.ofMinutes(5),
+    maxClockSkew = Duration.ofSeconds(30), // reject signatures created >30s in the future
     rejectExpired = true,
 )
 ```
@@ -240,10 +245,11 @@ Under the hood, `verifyMessage` performs these steps:
 3. For each signature (or just the one matching `requiredLabel`):
    a. Extract the covered components and metadata from the inner list.
    b. Check that all `requiredComponents` are covered.
-   c. Check time constraints (`maxAge`, `rejectExpired`).
+   c. Check time constraints (`maxAge`, `maxClockSkew`, `rejectExpired`).
    d. Resolve the key via the `KeyProvider`.
-   e. Reconstruct the signature base from the message.
-   f. Verify the cryptographic signature.
+   e. Verify the `alg` parameter (if present) matches the resolved key's algorithm.
+   f. Reconstruct the signature base from the message.
+   g. Verify the cryptographic signature.
 4. Return the first signature that passes all checks, or an error if none do.
 
 ## Error Handling
@@ -254,6 +260,8 @@ All implementations distinguish between these error cases:
 - **Malformed input**: headers present but cannot be parsed as SFV
 - **Invalid signature**: signature present but cryptographic verification failed
 - **Expired**: signature is older than `maxAge` or past its `expires` time
+- **Future-dated**: signature `created` timestamp is more than `maxClockSkew` ahead of the current time
+- **Algorithm mismatch**: the `alg` parameter in the signature metadata doesn't match the resolved key's algorithm
 - **Key not found**: the `KeyProvider` returned no key for the given `keyId`
 
 ## Verifying Response Signatures

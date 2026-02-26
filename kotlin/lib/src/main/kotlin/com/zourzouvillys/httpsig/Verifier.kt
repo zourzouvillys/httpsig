@@ -18,6 +18,7 @@ object Verifier {
     data class VerifyOptions(
         val requiredComponents: List<ComponentIdentifier>? = null,
         val maxAge: Duration? = null,
+        val maxClockSkew: Duration? = null,
         val rejectExpired: Boolean? = null,
         val requiredLabel: String? = null,
         val now: Supplier<Instant> = Supplier { Instant.now() },
@@ -146,6 +147,12 @@ object Verifier {
             val createdTime = Instant.ofEpochSecond(created)
             if (now.isAfter(createdTime.plus(options.maxAge))) {
                 throw HttpSigException("signature too old")
+            }
+        }
+        if (options.maxClockSkew != null && created != null) {
+            val createdTime = Instant.ofEpochSecond(created)
+            if (createdTime.isAfter(now.plus(options.maxClockSkew))) {
+                throw HttpSigException("signature future-dated")
             }
         }
         if (options.rejectExpired == true && expires != null) {

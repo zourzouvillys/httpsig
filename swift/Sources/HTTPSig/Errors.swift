@@ -6,6 +6,7 @@ public enum HttpSigError: Error, Sendable, Equatable {
     case missingComponent(String)
     case missingSignature
     case signatureExpired
+    case signatureFutureDated
     case keyNotFound(String)
     case malformedSignatureInput(String)
     case malformedSignature(String)

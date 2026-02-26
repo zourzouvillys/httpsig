@@ -19,6 +19,8 @@ npm run build           # compile to dist/
 - `SignatureParameters` is a plain object: `{ components, keyId, created, expires, nonce, tag }`
 - `ComponentIdentifier` is `{ name: string; params?: Record<string, string | boolean> }`
 - `KeyProvider` is `(keyId: string, algorithm?: string) => Promise<VerifyingKey | null>`
+- `VerifyOptions.maxClockSkewMs` rejects future-dated `created` timestamps
+- Verifier checks `alg` parameter against resolved key's `algorithm` and returns key-derived values in `VerifyResult`
 - Integration sub-paths: `@zourzouvillys/httpsig/fetch`, `/axios`, `/undici`
 - Tests use vitest, files at `test/*.test.ts`
 - `vector.test.ts` loads shared vectors from `../testdata/vectors/*.json`

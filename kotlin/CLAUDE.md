@@ -18,6 +18,8 @@ cd kotlin
 - `Algorithm` is a sealed class with `data object` singletons (not enum)
 - `RawMessage` is a sealed class with `Request` / `Response` subclasses
 - `KeyProvider` is a `fun interface` (supports SAM lambda conversion)
+- `VerifyOptions.maxClockSkew` rejects future-dated `created` timestamps
+- Verifier checks `alg` parameter against resolved key's algorithm
 - `Signer` / `Verifier` / `Keys` / `SFV` are `object` singletons
 - `SignatureParameters` uses builder: `.builder().component("x").keyId("y").build()`
 - `ComponentIdentifier` is a data class

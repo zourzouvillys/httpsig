@@ -2,6 +2,7 @@ package httpsig
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -14,6 +15,11 @@ type VerifyOptions struct {
 	// MaxAge is the maximum allowed age of a signature based on the "created" parameter.
 	// Zero means no age check.
 	MaxAge time.Duration
+
+	// MaxClockSkew is the maximum allowed forward clock skew for the "created" parameter.
+	// Signatures with created > now + MaxClockSkew are rejected.
+	// Zero means no future-dating check.
+	MaxClockSkew time.Duration
 
 	// RejectExpired controls whether expired signatures (based on "expires") are rejected.
 	// Defaults to true.
@@ -142,6 +148,11 @@ func VerifyMessage(msg Message, provider KeyProvider, opts *VerifyOptions, reqMs
 			continue
 		}
 
+		// If algorithm was specified in the input, it must match the key
+		if sigParams.Algorithm != "" && key.Algorithm() != sigParams.Algorithm {
+			continue
+		}
+
 		// Build signature base and verify
 		base, _, err := BuildSignatureBase(msg, sigParams, reqMsg)
 		if err != nil {
@@ -155,8 +166,8 @@ func VerifyMessage(msg Message, provider KeyProvider, opts *VerifyOptions, reqMs
 
 		return &VerifyResult{
 			Label:      label,
-			KeyID:      sigParams.KeyID,
-			Algorithm:  sigParams.Algorithm,
+			KeyID:      key.KeyID(),
+			Algorithm:  key.Algorithm(),
 			Components: sigParams.Components,
 			Created:    sigParams.Created,
 			Expires:    sigParams.Expires,
@@ -252,6 +263,13 @@ func checkTimeConstraints(params SignatureParameters, opts *VerifyOptions) error
 		}
 	}
 
+	if params.Created != nil && opts.MaxClockSkew > 0 {
+		created := time.Unix(*params.Created, 0)
+		if created.Sub(now) > opts.MaxClockSkew {
+			return ErrSignatureFutureDated
+		}
+	}
+
 	if params.Expires != nil && opts.rejectExpired() {
 		expires := time.Unix(*params.Expires, 0)
 		if now.After(expires) {
@@ -263,8 +281,5 @@ func checkTimeConstraints(params SignatureParameters, opts *VerifyOptions) error
 }
 
 func joinHeaderValues(values []string) string {
-	if len(values) == 1 {
-		return values[0]
-	}
-	return fmt.Sprintf("%s", values[0])
+	return strings.Join(values, ", ")
 }

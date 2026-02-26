@@ -21,6 +21,12 @@ var (
 	// ErrSignatureExpired is returned when a signature's created/expires times are out of bounds.
 	ErrSignatureExpired = errors.New("httpsig: signature expired")
 
+	// ErrSignatureFutureDated is returned when a signature's created time is too far in the future.
+	ErrSignatureFutureDated = errors.New("httpsig: signature future-dated")
+
+	// ErrAlgorithmMismatch is returned when the alg parameter doesn't match the resolved key's algorithm.
+	ErrAlgorithmMismatch = errors.New("httpsig: algorithm mismatch")
+
 	// ErrKeyNotFound is returned when a key provider cannot find a key for the given keyId.
 	ErrKeyNotFound = errors.New("httpsig: key not found")
 

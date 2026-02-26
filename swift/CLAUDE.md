@@ -19,6 +19,9 @@ swift test      # run all tests
 - `SFVParams` is an ordered map (preserves parameter insertion order)
 - `SFVParser` is a `~Copyable` struct (move-only, consumed during parsing)
 - `Signer` / `Verifier` are enum namespaces (no instances)
+- `VerifyOptions.maxClockSkew` rejects future-dated `created` timestamps (seconds)
+- `HttpSigError.signatureFutureDated` for future-dated rejection
+- Verifier checks `alg` parameter against resolved key's algorithm
 
 ## Crypto
 

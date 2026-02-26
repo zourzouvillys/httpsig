@@ -144,7 +144,7 @@ class SigningInterceptorTest {
             )
         );
 
-        var opts = new Verifier.VerifyOptions(null, null, null, "my-sig", null);
+        var opts = new Verifier.VerifyOptions(null, null, null, null, "my-sig", null);
         var result = Verifier.verify(rawMsg, (keyId, alg) -> verifyingKey, opts, null);
         assertEquals("my-sig", result.label());
     }

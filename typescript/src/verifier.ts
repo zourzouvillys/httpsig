@@ -103,6 +103,11 @@ export async function verifyMessage(
       continue;
     }
 
+    // If algorithm was specified in the input, it must match the key
+    if (sigParams.algorithm && key.algorithm !== sigParams.algorithm) {
+      continue;
+    }
+
     let base: Uint8Array;
     try {
       [base] = buildSignatureBase(msg, sigParams, reqMsg);
@@ -120,8 +125,8 @@ export async function verifyMessage(
 
     return {
       label,
-      keyId: sigParams.keyId,
-      algorithm: sigParams.algorithm,
+      keyId: key.keyId,
+      algorithm: key.algorithm,
       components: sigParams.components,
       created: sigParams.created,
       expires: sigParams.expires,
@@ -190,6 +195,11 @@ function checkTimeConstraints(
   if (params.created !== undefined && opts.maxAgeMs) {
     const createdMs = params.created * 1000;
     if (now - createdMs > opts.maxAgeMs) return false;
+  }
+
+  if (params.created !== undefined && opts.maxClockSkewMs) {
+    const createdMs = params.created * 1000;
+    if (createdMs - now > opts.maxClockSkewMs) return false;
   }
 
   const rejectExpired = opts.rejectExpired !== false;
