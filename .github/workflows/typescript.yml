@@ -1,0 +1,36 @@
+name: TypeScript
+
+on:
+  push:
+    paths: ['typescript/**', 'testdata/**', '.github/workflows/typescript.yml']
+  pull_request:
+    paths: ['typescript/**', 'testdata/**', '.github/workflows/typescript.yml']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install
+        working-directory: typescript
+        run: npm ci
+
+      - name: Lint
+        working-directory: typescript
+        run: npx tsc --noEmit
+
+      - name: Test
+        working-directory: typescript
+        run: npx vitest run
+
+      - name: Build
+        working-directory: typescript
+        run: npm run build

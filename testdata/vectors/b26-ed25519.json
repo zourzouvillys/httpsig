@@ -1,0 +1,37 @@
+{
+  "id": "B.2.6",
+  "description": "Signing a Request Using ed25519",
+  "message": {
+    "type": "request",
+    "method": "POST",
+    "url": "https://example.com/foo?param=Value&Pet=dog",
+    "headers": [
+      ["Host", "example.com"],
+      ["Date", "Tue, 20 Apr 2021 02:07:55 GMT"],
+      ["Content-Type", "application/json"],
+      ["Content-Digest", "sha-512=:WZDPaVn/7XgHaAy8pmojAkGWoRx2UFChF41A2svX+TaPm+AbwAgBWnrIiYllu7BNNyealdVLvRwEmTHWXvJwew==:"],
+      ["Content-Length", "18"]
+    ],
+    "body": "{\"hello\": \"world\"}"
+  },
+  "signingParams": {
+    "label": "sig-b26",
+    "components": [
+      "date",
+      "@method",
+      "@path",
+      "@authority",
+      "content-type",
+      "content-length"
+    ],
+    "keyId": "test-key-ed25519",
+    "algorithm": "ed25519",
+    "created": 1618884473
+  },
+  "expectedBase": "\"date\": Tue, 20 Apr 2021 02:07:55 GMT\n\"@method\": POST\n\"@path\": /foo\n\"@authority\": example.com\n\"content-type\": application/json\n\"content-length\": 18\n\"@signature-params\": (\"date\" \"@method\" \"@path\" \"@authority\" \"content-type\" \"content-length\");created=1618884473;keyid=\"test-key-ed25519\"",
+  "expectedSignatureInput": "sig-b26=(\"date\" \"@method\" \"@path\" \"@authority\" \"content-type\" \"content-length\");created=1618884473;keyid=\"test-key-ed25519\"",
+  "expectedSignature": "wqcAqbmYJ2ji2glfAMaRy4gruYYnx2nEFN2HN6jrnDnQCK1u02Gb04v9EDgwUPiu4A0w6vuQv5lIp5WPpBKRCw==",
+  "deterministic": true,
+  "keyFile": "keys/ed25519.priv.pem",
+  "pubKeyFile": "keys/ed25519.pub.pem"
+}

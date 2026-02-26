@@ -1,0 +1,270 @@
+package httpsig
+
+import (
+	"fmt"
+	"time"
+)
+
+// VerifyOptions controls signature verification behavior.
+type VerifyOptions struct {
+	// RequiredComponents specifies components that must be in the signature's
+	// covered components. Verification fails if any are missing.
+	RequiredComponents []ComponentIdentifier
+
+	// MaxAge is the maximum allowed age of a signature based on the "created" parameter.
+	// Zero means no age check.
+	MaxAge time.Duration
+
+	// RejectExpired controls whether expired signatures (based on "expires") are rejected.
+	// Defaults to true.
+	RejectExpired *bool
+
+	// Now overrides the current time for testing. If nil, time.Now() is used.
+	Now func() time.Time
+
+	// RequiredLabel specifies a specific signature label to verify. If empty,
+	// verifies the first signature that has a matching key.
+	RequiredLabel string
+}
+
+func (o *VerifyOptions) now() time.Time {
+	if o != nil && o.Now != nil {
+		return o.Now()
+	}
+	return time.Now()
+}
+
+func (o *VerifyOptions) rejectExpired() bool {
+	if o != nil && o.RejectExpired != nil {
+		return *o.RejectExpired
+	}
+	return true
+}
+
+// VerifyResult holds information about a successfully verified signature.
+type VerifyResult struct {
+	// Label is the signature label that was verified.
+	Label string
+	// KeyID is the key ID from the signature parameters.
+	KeyID string
+	// Algorithm is the algorithm from the signature parameters.
+	Algorithm Algorithm
+	// Components are the covered components.
+	Components []ComponentIdentifier
+	// Created is the creation timestamp, if present.
+	Created *int64
+	// Expires is the expiration timestamp, if present.
+	Expires *int64
+}
+
+// VerifyMessage verifies a signature on a message.
+// It parses the Signature-Input and Signature headers, reconstructs the signature base,
+// and verifies the signature using the key from the provider.
+func VerifyMessage(msg Message, provider KeyProvider, opts *VerifyOptions, reqMsg Message) (*VerifyResult, error) {
+	// Parse Signature-Input header
+	sigInputValues := msg.HeaderValues("signature-input")
+	if len(sigInputValues) == 0 {
+		return nil, ErrMissingSignature
+	}
+	sigInputStr := joinHeaderValues(sigInputValues)
+
+	sigInputDict, err := ParseDictionary(sigInputStr)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrMalformedSignatureInput, err)
+	}
+
+	// Parse Signature header
+	sigValues := msg.HeaderValues("signature")
+	if len(sigValues) == 0 {
+		return nil, ErrMissingSignature
+	}
+	sigStr := joinHeaderValues(sigValues)
+
+	sigDict, err := ParseDictionary(sigStr)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrMalformedSignature, err)
+	}
+
+	// Build lookup for signatures
+	sigMap := make(map[string][]byte)
+	for _, m := range sigDict {
+		if m.Item != nil {
+			if bs, ok := m.Item.Value.([]byte); ok {
+				sigMap[m.Key] = bs
+			}
+		}
+	}
+
+	// Try each signature input entry
+	for _, member := range sigInputDict {
+		label := member.Key
+
+		// If a specific label is required, skip others
+		if opts != nil && opts.RequiredLabel != "" && label != opts.RequiredLabel {
+			continue
+		}
+
+		if member.InnerList == nil {
+			continue
+		}
+
+		// Parse components from inner list
+		components, err := parseComponentsFromInnerList(member.InnerList)
+		if err != nil {
+			continue
+		}
+
+		// Extract parameters
+		sigParams, err := parseSignatureParams(member.InnerList.Params, components)
+		if err != nil {
+			continue
+		}
+
+		// Check required components
+		if opts != nil && !hasRequiredComponents(sigParams.Components, opts.RequiredComponents) {
+			continue
+		}
+
+		// Check time constraints
+		if err := checkTimeConstraints(sigParams, opts); err != nil {
+			continue
+		}
+
+		// Look up the signature bytes
+		sigBytes, ok := sigMap[label]
+		if !ok {
+			continue
+		}
+
+		// Resolve the key
+		key, err := provider(sigParams.KeyID, sigParams.Algorithm)
+		if err != nil {
+			continue
+		}
+
+		// Build signature base and verify
+		base, _, err := BuildSignatureBase(msg, sigParams, reqMsg)
+		if err != nil {
+			continue
+		}
+
+		valid, err := key.Verify(base, sigBytes)
+		if err != nil || !valid {
+			continue
+		}
+
+		return &VerifyResult{
+			Label:      label,
+			KeyID:      sigParams.KeyID,
+			Algorithm:  sigParams.Algorithm,
+			Components: sigParams.Components,
+			Created:    sigParams.Created,
+			Expires:    sigParams.Expires,
+		}, nil
+	}
+
+	return nil, ErrInvalidSignature
+}
+
+func parseComponentsFromInnerList(il *SFVInnerList) ([]ComponentIdentifier, error) {
+	var components []ComponentIdentifier
+	for _, item := range il.Items {
+		name, ok := item.Value.(string)
+		if !ok {
+			return nil, fmt.Errorf("component identifier must be a string")
+		}
+		components = append(components, ComponentIdentifier{
+			Name:   name,
+			Params: item.Params,
+		})
+	}
+	return components, nil
+}
+
+func parseSignatureParams(params *SFVParams, components []ComponentIdentifier) (SignatureParameters, error) {
+	sp := SignatureParameters{
+		Components: components,
+	}
+	if params == nil {
+		return sp, nil
+	}
+
+	if v, ok := params.Get("created"); ok {
+		if n, ok := v.(int64); ok {
+			sp.Created = &n
+		}
+	}
+	if v, ok := params.Get("expires"); ok {
+		if n, ok := v.(int64); ok {
+			sp.Expires = &n
+		}
+	}
+	if v, ok := params.Get("nonce"); ok {
+		if s, ok := v.(string); ok {
+			sp.Nonce = &s
+		}
+	}
+	if v, ok := params.Get("alg"); ok {
+		if s, ok := v.(string); ok {
+			sp.Algorithm = Algorithm(s)
+		}
+	}
+	if v, ok := params.Get("keyid"); ok {
+		if s, ok := v.(string); ok {
+			sp.KeyID = s
+		}
+	}
+	if v, ok := params.Get("tag"); ok {
+		if s, ok := v.(string); ok {
+			sp.Tag = &s
+		}
+	}
+	return sp, nil
+}
+
+func hasRequiredComponents(have, required []ComponentIdentifier) bool {
+	if len(required) == 0 {
+		return true
+	}
+	haveSet := make(map[string]bool)
+	for _, c := range have {
+		haveSet[serializeComponentID(c)] = true
+	}
+	for _, c := range required {
+		if !haveSet[serializeComponentID(c)] {
+			return false
+		}
+	}
+	return true
+}
+
+func checkTimeConstraints(params SignatureParameters, opts *VerifyOptions) error {
+	if opts == nil {
+		return nil
+	}
+
+	now := opts.now()
+
+	if params.Created != nil && opts.MaxAge > 0 {
+		created := time.Unix(*params.Created, 0)
+		if now.Sub(created) > opts.MaxAge {
+			return ErrSignatureExpired
+		}
+	}
+
+	if params.Expires != nil && opts.rejectExpired() {
+		expires := time.Unix(*params.Expires, 0)
+		if now.After(expires) {
+			return ErrSignatureExpired
+		}
+	}
+
+	return nil
+}
+
+func joinHeaderValues(values []string) string {
+	if len(values) == 1 {
+		return values[0]
+	}
+	return fmt.Sprintf("%s", values[0])
+}

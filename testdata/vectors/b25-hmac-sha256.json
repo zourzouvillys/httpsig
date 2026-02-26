@@ -1,0 +1,33 @@
+{
+  "id": "B.2.5",
+  "description": "Signing with hmac-sha256",
+  "message": {
+    "type": "request",
+    "method": "POST",
+    "url": "https://example.com/foo?param=Value&Pet=dog",
+    "headers": [
+      ["Host", "example.com"],
+      ["Date", "Tue, 20 Apr 2021 02:07:55 GMT"],
+      ["Content-Type", "application/json"],
+      ["Content-Digest", "sha-512=:WZDPaVn/7XgHaAy8pmojAkGWoRx2UFChF41A2svX+TaPm+AbwAgBWnrIiYllu7BNNyealdVLvRwEmTHWXvJwew==:"],
+      ["Content-Length", "18"]
+    ],
+    "body": "{\"hello\": \"world\"}"
+  },
+  "signingParams": {
+    "label": "sig-b25",
+    "components": [
+      "date",
+      "@authority",
+      "content-type"
+    ],
+    "keyId": "test-shared-secret",
+    "algorithm": "hmac-sha256",
+    "created": 1618884473
+  },
+  "expectedBase": "\"date\": Tue, 20 Apr 2021 02:07:55 GMT\n\"@authority\": example.com\n\"content-type\": application/json\n\"@signature-params\": (\"date\" \"@authority\" \"content-type\");created=1618884473;keyid=\"test-shared-secret\"",
+  "expectedSignatureInput": "sig-b25=(\"date\" \"@authority\" \"content-type\");created=1618884473;keyid=\"test-shared-secret\"",
+  "expectedSignature": "pxcQw6G3AjtMBQjwo8XzkZf/bws5LelbaMk5rGIGtE8=",
+  "deterministic": true,
+  "keyFile": "keys/hmac-secret.b64"
+}

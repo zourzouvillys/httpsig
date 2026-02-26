@@ -1,0 +1,39 @@
+{
+  "id": "B.2.3",
+  "description": "Full Coverage Using rsa-pss-sha512",
+  "message": {
+    "type": "request",
+    "method": "POST",
+    "url": "https://example.com/foo?param=Value&Pet=dog",
+    "headers": [
+      ["Host", "example.com"],
+      ["Date", "Tue, 20 Apr 2021 02:07:55 GMT"],
+      ["Content-Type", "application/json"],
+      ["Content-Digest", "sha-512=:WZDPaVn/7XgHaAy8pmojAkGWoRx2UFChF41A2svX+TaPm+AbwAgBWnrIiYllu7BNNyealdVLvRwEmTHWXvJwew==:"],
+      ["Content-Length", "18"]
+    ],
+    "body": "{\"hello\": \"world\"}"
+  },
+  "signingParams": {
+    "label": "sig-b23",
+    "components": [
+      "date",
+      "@method",
+      "@path",
+      "@query",
+      "@authority",
+      "content-type",
+      "content-digest",
+      "content-length"
+    ],
+    "keyId": "test-key-rsa-pss",
+    "algorithm": "rsa-pss-sha512",
+    "created": 1618884473
+  },
+  "expectedBase": "\"date\": Tue, 20 Apr 2021 02:07:55 GMT\n\"@method\": POST\n\"@path\": /foo\n\"@query\": ?param=Value&Pet=dog\n\"@authority\": example.com\n\"content-type\": application/json\n\"content-digest\": sha-512=:WZDPaVn/7XgHaAy8pmojAkGWoRx2UFChF41A2svX+TaPm+AbwAgBWnrIiYllu7BNNyealdVLvRwEmTHWXvJwew==:\n\"content-length\": 18\n\"@signature-params\": (\"date\" \"@method\" \"@path\" \"@query\" \"@authority\" \"content-type\" \"content-digest\" \"content-length\");created=1618884473;keyid=\"test-key-rsa-pss\"",
+  "expectedSignatureInput": "sig-b23=(\"date\" \"@method\" \"@path\" \"@query\" \"@authority\" \"content-type\" \"content-digest\" \"content-length\");created=1618884473;keyid=\"test-key-rsa-pss\"",
+  "verifyOnlySignature": "bbN8oArOxYoyylQQUU6QYwrTuaxLwjAC9fbY2F6SVWvh0yBiMIRGOnMYwZ/5MR6fb0Kh1rIRASVxFkeGt683+qRpRRU5p2voTp768ZrCUb38K0fUxN0O0iC59DzYx8DFll5GmydPxSmme9v6ULbMFkl+V5B1TP/yPViV7KsLNmvKiLJH1pFkh/aYA2HXXZzNBXmIkoQoLd7YfW91kE9o/CCoC1xMy7JA1ipwvKvfrs65ldmlu9bpG6A9BmzhuzF8Eim5f8ui9eH8LZH896+QIF61ka39VBrohr9iyMUJpvRX2Zbhl5ZJzSRxpJyoEZAFL2FUo5fTIztsDZKEgM4cUA==",
+  "deterministic": false,
+  "keyFile": "keys/rsa-pss.priv.pem",
+  "pubKeyFile": "keys/rsa-pss.pub.pem"
+}

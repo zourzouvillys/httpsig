@@ -1,0 +1,53 @@
+# Go
+golang/bin/
+*.exe
+*.dll
+*.so
+*.dylib
+
+# TypeScript
+typescript/node_modules/
+typescript/dist/
+typescript/coverage/
+*.tsbuildinfo
+
+# Java
+java/.gradle/
+java/build/
+java/*/build/
+java/bin/
+*.class
+*.jar
+
+# Kotlin
+kotlin/.gradle/
+kotlin/build/
+kotlin/*/build/
+kotlin/bin/
+
+# Swift
+swift/.build/
+swift/.swiftpm/
+swift/Package.resolved
+swift/*.xcodeproj/
+
+# Docs
+docs/node_modules/
+docs/build/
+docs/.docusaurus/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test/Coverage
+*.test
+coverage/
+*.out

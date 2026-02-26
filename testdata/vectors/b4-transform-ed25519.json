@@ -1,0 +1,33 @@
+{
+  "id": "B.4",
+  "description": "HTTP Message Transformations - ed25519 with multi-value Accept header",
+  "message": {
+    "type": "request",
+    "method": "GET",
+    "url": "https://example.org/demo?name1=Value1&Name2=value2",
+    "headers": [
+      ["Host", "example.org"],
+      ["Date", "Fri, 15 Jul 2022 14:24:55 GMT"],
+      ["Accept", "application/json"],
+      ["Accept", "*/*"]
+    ]
+  },
+  "signingParams": {
+    "label": "transform",
+    "components": [
+      "@method",
+      "@path",
+      "@authority",
+      "accept"
+    ],
+    "keyId": "test-key-ed25519",
+    "algorithm": "ed25519",
+    "created": 1618884473
+  },
+  "expectedBase": "\"@method\": GET\n\"@path\": /demo\n\"@authority\": example.org\n\"accept\": application/json, */*\n\"@signature-params\": (\"@method\" \"@path\" \"@authority\" \"accept\");created=1618884473;keyid=\"test-key-ed25519\"",
+  "expectedSignatureInput": "transform=(\"@method\" \"@path\" \"@authority\" \"accept\");created=1618884473;keyid=\"test-key-ed25519\"",
+  "expectedSignature": "ZT1kooQsEHpZ0I1IjCqtQppOmIqlJPeo7DHR3SoMn0s5JZ1eRGS0A+vyYP9t/LXlh5QMFFQ6cpLt2m0pmj3NDA==",
+  "deterministic": true,
+  "keyFile": "keys/ed25519.priv.pem",
+  "pubKeyFile": "keys/ed25519.pub.pem"
+}

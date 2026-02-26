@@ -1,0 +1,66 @@
+{
+  "name": "@zourzouvillys/httpsig",
+  "version": "0.1.0",
+  "description": "HTTP Message Signatures (RFC 9421) with Content-Digest (RFC 9530)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./fetch": {
+      "types": "./dist/integrations/fetch.d.ts",
+      "import": "./dist/integrations/fetch.js"
+    },
+    "./axios": {
+      "types": "./dist/integrations/axios.d.ts",
+      "import": "./dist/integrations/axios.js"
+    },
+    "./undici": {
+      "types": "./dist/integrations/undici.d.ts",
+      "import": "./dist/integrations/undici.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "http",
+    "signatures",
+    "rfc9421",
+    "rfc9530",
+    "content-digest",
+    "hmac",
+    "ecdsa",
+    "ed25519",
+    "rsa-pss"
+  ],
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "peerDependencies": {
+    "axios": ">=1.0.0"
+  },
+  "peerDependenciesMeta": {
+    "axios": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^25.3.1",
+    "axios": "^1.7.0",
+    "typescript": "^5.5.0",
+    "undici": "^7.22.0",
+    "vitest": "^2.0.0"
+  }
+}

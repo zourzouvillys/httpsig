@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "HTTP Message Signatures Test Vector",
+  "type": "object",
+  "required": ["id", "description", "message", "signingParams", "expectedBase", "expectedSignatureInput"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Test vector identifier (e.g. B.2.1)"
+    },
+    "description": {
+      "type": "string"
+    },
+    "message": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "enum": ["request", "response"]
+        },
+        "method": { "type": "string" },
+        "url": { "type": "string" },
+        "statusCode": { "type": "integer" },
+        "headers": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "body": { "type": "string" }
+      }
+    },
+    "requestMessage": {
+      "type": "object",
+      "description": "For response signatures, the associated request"
+    },
+    "signingParams": {
+      "type": "object",
+      "required": ["label", "components", "keyId"],
+      "properties": {
+        "label": { "type": "string" },
+        "components": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "required": ["name", "params"],
+                "properties": {
+                  "name": { "type": "string" },
+                  "params": { "type": "object" }
+                }
+              }
+            ]
+          }
+        },
+        "keyId": { "type": "string" },
+        "algorithm": { "type": "string" },
+        "created": { "type": "integer" },
+        "expires": { "type": "integer" },
+        "nonce": { "type": "string" },
+        "tag": { "type": "string" }
+      }
+    },
+    "expectedBase": {
+      "type": "string",
+      "description": "The expected signature base string"
+    },
+    "expectedSignatureInput": {
+      "type": "string",
+      "description": "The expected Signature-Input header value for this label"
+    },
+    "expectedSignature": {
+      "type": "string",
+      "description": "Expected base64 signature (only for deterministic algorithms)"
+    },
+    "verifyOnlySignature": {
+      "type": "string",
+      "description": "Base64 signature for verification (for non-deterministic algorithms)"
+    },
+    "deterministic": {
+      "type": "boolean",
+      "description": "Whether the algorithm produces deterministic signatures"
+    },
+    "keyFile": {
+      "type": "string",
+      "description": "Relative path to the signing key file"
+    },
+    "pubKeyFile": {
+      "type": "string",
+      "description": "Relative path to the public/verifying key file"
+    }
+  }
+}

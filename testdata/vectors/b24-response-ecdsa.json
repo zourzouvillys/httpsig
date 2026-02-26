@@ -1,0 +1,44 @@
+{
+  "id": "B.2.4",
+  "description": "Signing a Response Using ecdsa-p256-sha256",
+  "message": {
+    "type": "response",
+    "statusCode": 200,
+    "headers": [
+      ["Date", "Tue, 20 Apr 2021 02:07:56 GMT"],
+      ["Content-Type", "application/json"],
+      ["Content-Digest", "sha-512=:mEWXIS7MaLRuGgxOBdODa3xqM1XdEvxoYhvlCFJ41QJgJc4GTsPp29l5oGX69wWdXymyU0rjJuahq4l5aGgfLQ==:"],
+      ["Content-Length", "23"]
+    ],
+    "body": "{\"message\": \"good dog\"}"
+  },
+  "requestMessage": {
+    "type": "request",
+    "method": "POST",
+    "url": "https://example.com/foo?param=Value&Pet=dog",
+    "headers": [
+      ["Host", "example.com"],
+      ["Date", "Tue, 20 Apr 2021 02:07:55 GMT"],
+      ["Content-Type", "application/json"],
+      ["Content-Digest", "sha-512=:WZDPaVn/7XgHaAy8pmojAkGWoRx2UFChF41A2svX+TaPm+AbwAgBWnrIiYllu7BNNyealdVLvRwEmTHWXvJwew==:"],
+      ["Content-Length", "18"]
+    ]
+  },
+  "signingParams": {
+    "label": "sig-b24",
+    "components": [
+      "@status",
+      "content-type",
+      "content-digest",
+      "content-length"
+    ],
+    "keyId": "test-key-ecc-p256",
+    "algorithm": "ecdsa-p256-sha256",
+    "created": 1618884473
+  },
+  "expectedBase": "\"@status\": 200\n\"content-type\": application/json\n\"content-digest\": sha-512=:mEWXIS7MaLRuGgxOBdODa3xqM1XdEvxoYhvlCFJ41QJgJc4GTsPp29l5oGX69wWdXymyU0rjJuahq4l5aGgfLQ==:\n\"content-length\": 23\n\"@signature-params\": (\"@status\" \"content-type\" \"content-digest\" \"content-length\");created=1618884473;keyid=\"test-key-ecc-p256\"",
+  "expectedSignatureInput": "sig-b24=(\"@status\" \"content-type\" \"content-digest\" \"content-length\");created=1618884473;keyid=\"test-key-ecc-p256\"",
+  "deterministic": false,
+  "keyFile": "keys/ecc-p256.priv.pem",
+  "pubKeyFile": "keys/ecc-p256.pub.pem"
+}
