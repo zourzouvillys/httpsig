@@ -14,7 +14,7 @@ typescript/coverage/
 # Java
 java/.gradle/
 java/build/
-java/*/build/
+java/**/build/
 java/bin/
 *.class
 *.jar
