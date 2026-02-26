@@ -18,6 +18,7 @@ java/**/build/
 java/bin/
 *.class
 *.jar
+!**/gradle/wrapper/gradle-wrapper.jar
 
 # Kotlin
 kotlin/.gradle/
