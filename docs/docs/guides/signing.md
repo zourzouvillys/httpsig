@@ -39,7 +39,7 @@ const key = newEd25519SigningKey('my-key-id', privateKey);
 <TabItem value="java" label="Java">
 
 ```java
-import com.zourzouvillys.httpsig.Keys;
+import io.zrz.httpsig.Keys;
 import java.security.KeyPairGenerator;
 
 var keyPair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
@@ -61,7 +61,7 @@ let key = Ed25519SigningKey(keyId: "my-key-id", privateKey: privateKey)
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-import com.zourzouvillys.httpsig.Keys
+import io.zrz.httpsig.Keys
 import java.security.KeyPairGenerator
 
 val keyPair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
@@ -113,7 +113,7 @@ const params = {
 <TabItem value="java" label="Java">
 
 ```java
-import com.zourzouvillys.httpsig.SignatureParameters;
+import io.zrz.httpsig.SignatureParameters;
 import java.time.Instant;
 
 var params = SignatureParameters.builder()
@@ -146,7 +146,7 @@ let params = SignatureParameters(
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-import com.zourzouvillys.httpsig.SignatureParameters
+import io.zrz.httpsig.SignatureParameters
 import java.time.Instant
 
 val params = SignatureParameters.builder()
@@ -206,7 +206,7 @@ headers['Signature'] = signatureHeader(result);
 <TabItem value="java" label="Java">
 
 ```java
-import com.zourzouvillys.httpsig.Signer;
+import io.zrz.httpsig.Signer;
 
 Signer.SignResult result = Signer.sign(httpMessage, "sig1", params, key, null);
 
@@ -228,7 +228,7 @@ request.addValue(Signer.signatureHeader(result), forHTTPHeaderField: "Signature"
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-import com.zourzouvillys.httpsig.Signer
+import io.zrz.httpsig.Signer
 
 val result = Signer.sign(httpMessage, "sig1", params, key)
 

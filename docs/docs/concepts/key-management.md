@@ -128,7 +128,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import java.security.KeyPairGenerator
 import java.security.KeyStore
-import com.zourzouvillys.httpsig.Keys
+import io.zrz.httpsig.Keys
 
 // Generate a key in the Android Keystore
 val keyGen = KeyPairGenerator.getInstance(

@@ -23,9 +23,9 @@ HTTP Message Signatures solve this by cryptographically signing specific parts o
 |------------|------------------------------------------|--------------|
 | Go         | `github.com/zourzouvillys/httpsig/golang`| net/http (RoundTripper + Handler middleware) |
 | TypeScript | `@zourzouvillys/httpsig`                 | fetch, axios, undici |
-| Java       | `com.zourzouvillys:httpsig`              | OkHttp, JDK HttpClient, Spring WebClient |
+| Java       | `io.zrz:httpsig`              | OkHttp, JDK HttpClient, Spring WebClient |
 | Swift      | `HTTPSig` (SPM)                          | URLSession, Alamofire |
-| Kotlin     | `com.zourzouvillys:httpsig-kotlin`       | OkHttp, Ktor |
+| Kotlin     | `io.zrz:httpsig-kotlin`       | OkHttp, Ktor |
 
 All five implementations share the same test vectors derived from RFC 9421 Appendix B, ensuring cross-language interoperability.
 

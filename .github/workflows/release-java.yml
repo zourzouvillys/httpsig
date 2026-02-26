@@ -47,13 +47,13 @@ jobs:
 
             ```kotlin
             // Gradle
-            implementation("com.zourzouvillys:httpsig:${{ steps.version.outputs.version }}")
+            implementation("io.zrz:httpsig:${{ steps.version.outputs.version }}")
             ```
 
             ```xml
             <!-- Maven -->
             <dependency>
-              <groupId>com.zourzouvillys</groupId>
+              <groupId>io.zrz</groupId>
               <artifactId>httpsig</artifactId>
               <version>${{ steps.version.outputs.version }}</version>
             </dependency>

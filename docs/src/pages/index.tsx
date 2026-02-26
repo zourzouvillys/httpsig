@@ -16,7 +16,7 @@ const languages = [
   },
   {
     name: 'Java',
-    install: 'com.zourzouvillys:httpsig',
+    install: 'io.zrz:httpsig',
     link: '/docs/getting-started/java',
   },
   {
@@ -26,7 +26,7 @@ const languages = [
   },
   {
     name: 'Kotlin',
-    install: 'com.zourzouvillys:httpsig-kotlin',
+    install: 'io.zrz:httpsig-kotlin',
     link: '/docs/getting-started/kotlin',
   },
 ];

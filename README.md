@@ -14,9 +14,9 @@ Multi-language [HTTP Message Signatures (RFC 9421)](https://www.rfc-editor.org/r
 |---|---|---|
 | [Go](golang/) | `go get github.com/zourzouvillys/httpsig/golang` | net/http middleware |
 | [TypeScript](typescript/) | `npm install @zourzouvillys/httpsig` | fetch, axios, undici |
-| [Java](java/) | `com.zourzouvillys:httpsig` | OkHttp, JDK HttpClient, Spring WebClient |
+| [Java](java/) | `io.zrz:httpsig` | OkHttp, JDK HttpClient, Spring WebClient |
 | [Swift](swift/) | SPM: `github.com/zourzouvillys/httpsig` | URLSession, Alamofire |
-| [Kotlin](kotlin/) | `com.zourzouvillys:httpsig-kotlin` | OkHttp, Ktor |
+| [Kotlin](kotlin/) | `io.zrz:httpsig-kotlin` | OkHttp, Ktor |
 
 ## Features
 

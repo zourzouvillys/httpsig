@@ -17,9 +17,9 @@ Monorepo with five language implementations sharing test vectors:
 httpsig/
   golang/          Go (package httpsig, Go 1.22+)
   typescript/      TypeScript (@zourzouvillys/httpsig, Node 20+, ESM)
-  java/            Java (com.zourzouvillys.httpsig, Java 17+, Gradle)
+  java/            Java (io.zrz.httpsig, Java 17+, Gradle)
   swift/           Swift (HTTPSig, macOS 13+/iOS 16+, SPM, Swift 6.0)
-  kotlin/          Kotlin JVM (com.zourzouvillys.httpsig, JVM 17+, Gradle)
+  kotlin/          Kotlin JVM (io.zrz.httpsig, JVM 17+, Gradle)
   testdata/        Shared RFC 9421 test vectors (all languages load these)
   docs/            Docusaurus documentation site
   .github/         CI workflows + GitHub templates

@@ -10,12 +10,12 @@ sidebar_position: 3
 
 ```kotlin
 dependencies {
-    implementation("com.zourzouvillys:httpsig")
+    implementation("io.zrz:httpsig")
 
     // Optional integrations (pick what you need):
-    implementation("com.zourzouvillys:httpsig-okhttp")
-    implementation("com.zourzouvillys:httpsig-jdk-http")
-    implementation("com.zourzouvillys:httpsig-spring-webclient")
+    implementation("io.zrz:httpsig-okhttp")
+    implementation("io.zrz:httpsig-jdk-http")
+    implementation("io.zrz:httpsig-spring-webclient")
 }
 ```
 
@@ -23,7 +23,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'com.zourzouvillys:httpsig'
+    implementation 'io.zrz:httpsig'
 }
 ```
 
@@ -32,7 +32,7 @@ Requires Java 17 or later.
 ## Quick Example: Sign a Request
 
 ```java
-import com.zourzouvillys.httpsig.*;
+import io.zrz.httpsig.*;
 import java.time.Instant;
 
 // Create a signing key (Ed25519)
@@ -59,7 +59,7 @@ request.addHeader("Signature", Signer.signatureHeader(result));
 ## Quick Example: Verify a Signature
 
 ```java
-import com.zourzouvillys.httpsig.*;
+import io.zrz.httpsig.*;
 
 // Set up a KeyProvider
 KeyProvider provider = (keyId, algorithm) -> {
@@ -89,7 +89,7 @@ Java has three integration modules:
 ### OkHttp
 
 ```java
-import com.zourzouvillys.httpsig.okhttp.SigningInterceptor;
+import io.zrz.httpsig.okhttp.SigningInterceptor;
 
 var interceptor = new SigningInterceptor(
     signingKey,
@@ -109,7 +109,7 @@ var client = new OkHttpClient.Builder()
 ### JDK HttpClient
 
 ```java
-import com.zourzouvillys.httpsig.jdkhttp.HttpSigning;
+import io.zrz.httpsig.jdkhttp.HttpSigning;
 
 var builder = HttpRequest.newBuilder()
     .uri(URI.create("https://example.com/api"))
@@ -124,7 +124,7 @@ var request = builder.build();
 ### Spring WebClient
 
 ```java
-import com.zourzouvillys.httpsig.spring.SigningFilterFunction;
+import io.zrz.httpsig.spring.SigningFilterFunction;
 
 var filter = new SigningFilterFunction(
     signingKey,

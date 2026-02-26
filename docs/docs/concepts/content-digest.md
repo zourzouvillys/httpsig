@@ -58,7 +58,7 @@ const digest = contentDigest(body, 'sha-256');
 ### Java
 
 ```java
-import com.zourzouvillys.httpsig.ContentDigest;
+import io.zrz.httpsig.ContentDigest;
 
 byte[] body = "{\"hello\": \"world\"}".getBytes();
 String digest = ContentDigest.compute(body, "sha-256");

@@ -149,7 +149,7 @@ const { statusCode, body } = await signedRequest('https://example.com/api', {
 `SigningInterceptor` implements OkHttp's `Interceptor` interface:
 
 ```java
-import com.zourzouvillys.httpsig.okhttp.SigningInterceptor;
+import io.zrz.httpsig.okhttp.SigningInterceptor;
 
 var interceptor = new SigningInterceptor(
     signingKey,
@@ -179,7 +179,7 @@ var response = client.newCall(request).execute();
 `HttpSigning` signs a `HttpRequest.Builder` in place:
 
 ```java
-import com.zourzouvillys.httpsig.jdkhttp.HttpSigning;
+import io.zrz.httpsig.jdkhttp.HttpSigning;
 
 var builder = HttpRequest.newBuilder()
     .uri(URI.create("https://example.com/api"))
@@ -197,7 +197,7 @@ var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 `SigningFilterFunction` implements `ExchangeFilterFunction`:
 
 ```java
-import com.zourzouvillys.httpsig.spring.SigningFilterFunction;
+import io.zrz.httpsig.spring.SigningFilterFunction;
 
 var filter = new SigningFilterFunction(
     signingKey,
@@ -270,7 +270,7 @@ let response = await session.request(
 The Kotlin OkHttp integration mirrors the Java one with Kotlin-idiomatic syntax:
 
 ```kotlin
-import com.zourzouvillys.httpsig.okhttp.SigningInterceptor
+import io.zrz.httpsig.okhttp.SigningInterceptor
 
 val interceptor = SigningInterceptor(
     key = signingKey,

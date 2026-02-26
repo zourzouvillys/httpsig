@@ -10,10 +10,10 @@ sidebar_position: 5
 
 ```kotlin
 dependencies {
-    implementation("com.zourzouvillys:httpsig-kotlin")
+    implementation("io.zrz:httpsig-kotlin")
 
     // Optional: OkHttp integration
-    implementation("com.zourzouvillys:httpsig-kotlin-okhttp")
+    implementation("io.zrz:httpsig-kotlin-okhttp")
 }
 ```
 
@@ -22,7 +22,7 @@ Requires Kotlin 2.1.10+, JVM target 17. Uses the same JCA cryptographic provider
 ## Quick Example: Sign a Request
 
 ```kotlin
-import com.zourzouvillys.httpsig.*
+import io.zrz.httpsig.*
 import java.time.Instant
 
 // Create a signing key
@@ -49,7 +49,7 @@ request.addHeader("Signature", Signer.signatureHeader(result))
 ## Quick Example: Verify a Signature
 
 ```kotlin
-import com.zourzouvillys.httpsig.*
+import io.zrz.httpsig.*
 
 // Set up a KeyProvider (SAM interface, so a lambda works)
 val provider = KeyProvider { keyId, algorithm ->
@@ -82,7 +82,7 @@ println("Verified: label=${result.label}, keyId=${result.keyId}")
 ### OkHttp
 
 ```kotlin
-import com.zourzouvillys.httpsig.okhttp.SigningInterceptor
+import io.zrz.httpsig.okhttp.SigningInterceptor
 
 val interceptor = SigningInterceptor(
     key = signingKey,
