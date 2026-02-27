@@ -25,8 +25,9 @@ Requires Kotlin 2.1.10+, JVM target 17. Uses the same JCA cryptographic provider
 import io.zrz.httpsig.*
 import java.time.Instant
 
-// Create a signing key
-val key = Keys.ed25519SigningKey("my-key-id", privateKey)
+// Create a key pair (auto-detects algorithm from JCA key type)
+val kp = Keys.keyPair("my-key-id", KeyPairGenerator.getInstance("Ed25519").generateKeyPair())
+val key = kp.signingKey
 
 // Build signature parameters
 val params = SignatureParameters.builder()
@@ -51,13 +52,10 @@ request.addHeader("Signature", Signer.signatureHeader(result))
 ```kotlin
 import io.zrz.httpsig.*
 
-// Set up a KeyProvider (SAM interface, so a lambda works)
-val provider = KeyProvider { keyId, algorithm ->
-    if (keyId == "my-key-id") {
-        Keys.ed25519VerifyingKey(keyId, publicKey)
-    } else {
-        null
-    }
+// Set up a KeyProvider (auto-detects algorithm from JCA key type)
+val provider = KeyProvider { keyId, _ ->
+    val pub = keyStore[keyId] ?: return@KeyProvider null
+    Keys.verifyingKey(keyId, pub)
 }
 
 // Verify

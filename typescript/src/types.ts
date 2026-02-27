@@ -77,6 +77,14 @@ export interface VerifyingKey {
   verify(data: Uint8Array, signature: Uint8Array): Promise<boolean>;
 }
 
+/** A paired signing and verifying key with the same identity and algorithm. */
+export interface KeyPair {
+  readonly keyId: string;
+  readonly algorithm: Algorithm;
+  readonly signingKey: SigningKey;
+  readonly verifyingKey: VerifyingKey;
+}
+
 /** Resolves a key ID to a VerifyingKey. */
 export type KeyProvider = (
   keyId: string,

@@ -30,8 +30,9 @@ func main() {
     // Load or generate your private key
     _, privateKey, _ := ed25519.GenerateKey(nil)
 
-    // Create a signing key
-    key := httpsig.NewEd25519SigningKey("my-key-id", privateKey)
+    // Create a key pair (auto-detects algorithm from key type)
+    kp, _ := httpsig.NewKeyPair("my-key-id", privateKey)
+    key := kp.Signing
 
     // Build a request
     req, _ := http.NewRequest("POST", "https://example.com/api/resource", nil)
@@ -81,10 +82,10 @@ func main() {
     // Load the public key
     publicKey := loadPublicKey() // your public key
 
-    // Set up a KeyProvider
+    // Set up a KeyProvider (auto-detects algorithm from public key type)
     provider := func(keyID string, alg httpsig.Algorithm) (httpsig.VerifyingKey, error) {
         if keyID == "my-key-id" {
-            return httpsig.NewEd25519VerifyingKey(keyID, publicKey), nil
+            return httpsig.NewVerifyingKeyFromPublic(keyID, publicKey)
         }
         return nil, fmt.Errorf("unknown key: %s", keyID)
     }

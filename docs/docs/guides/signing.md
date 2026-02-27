@@ -8,6 +8,8 @@ This guide walks through signing HTTP requests in all five languages.
 
 ## Step 1: Create a Signing Key
 
+The auto-detect constructors infer the algorithm from the key type. You can also use explicit per-algorithm constructors (see [Key Management](/docs/concepts/key-management)).
+
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
 
@@ -21,7 +23,8 @@ import (
 )
 
 _, privateKey, _ := ed25519.GenerateKey(nil)
-key := httpsig.NewEd25519SigningKey("my-key-id", privateKey)
+kp, _ := httpsig.NewKeyPair("my-key-id", privateKey)
+key := kp.Signing // use kp.Verifying for verification
 ```
 
 </TabItem>
@@ -29,10 +32,11 @@ key := httpsig.NewEd25519SigningKey("my-key-id", privateKey)
 
 ```typescript
 import * as crypto from 'node:crypto';
-import { newEd25519SigningKey } from '@zourzouvillys/httpsig';
+import { newKeyPair } from '@zourzouvillys/httpsig';
 
 const { privateKey } = crypto.generateKeyPairSync('ed25519');
-const key = newEd25519SigningKey('my-key-id', privateKey);
+const kp = newKeyPair('my-key-id', privateKey);
+const key = kp.signingKey; // use kp.verifyingKey for verification
 ```
 
 </TabItem>
@@ -42,8 +46,9 @@ const key = newEd25519SigningKey('my-key-id', privateKey);
 import io.zrz.httpsig.Keys;
 import java.security.KeyPairGenerator;
 
-var keyPair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
-var key = Keys.ed25519SigningKey("my-key-id", keyPair.getPrivate());
+var jcaKp = KeyPairGenerator.getInstance("Ed25519").generateKeyPair();
+var kp = Keys.keyPair("my-key-id", jcaKp);
+var key = kp.signingKey(); // use kp.verifyingKey() for verification
 ```
 
 </TabItem>
@@ -54,7 +59,8 @@ import HTTPSig
 import CryptoKit
 
 let privateKey = Curve25519.Signing.PrivateKey()
-let key = Ed25519SigningKey(keyId: "my-key-id", privateKey: privateKey)
+let kp = KeyPair.ed25519(keyId: "my-key-id", privateKey: privateKey)
+let key = kp.signingKey // use kp.verifyingKey for verification
 ```
 
 </TabItem>
@@ -64,8 +70,9 @@ let key = Ed25519SigningKey(keyId: "my-key-id", privateKey: privateKey)
 import io.zrz.httpsig.Keys
 import java.security.KeyPairGenerator
 
-val keyPair = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
-val key = Keys.ed25519SigningKey("my-key-id", keyPair.private)
+val jcaKp = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
+val kp = Keys.keyPair("my-key-id", jcaKp)
+val key = kp.signingKey // use kp.verifyingKey for verification
 ```
 
 </TabItem>

@@ -42,7 +42,8 @@ All five implementations share the same test vectors derived from RFC 9421 Appen
 - Content-Digest generation and verification (RFC 9530, SHA-256 and SHA-512)
 - All standard derived components: `@method`, `@path`, `@authority`, `@query`, `@query-param`, `@status`, `@scheme`, `@target-uri`, `@request-target`
 - Header field signing with `;sf`, `;bs`, `;key`, and `;req` parameters
-- Non-extractable key support: HSM/PKCS#11, Apple Secure Enclave, Android Keystore, Web Crypto API
+- `KeyPair` type and auto-detection: pass any private key, the library detects the algorithm and derives the public key
+- Platform backend support: HSM/PKCS#11 (Go), Apple Secure Enclave (Swift), Android Keystore (Java/Kotlin), Web Crypto API (TypeScript)
 - HTTP client integrations for each language (middleware, interceptors, filter functions)
 - Verification security: algorithm consistency checks, future-dated signature rejection (`maxClockSkew`), replay protection via `maxAge` and `expires`
 

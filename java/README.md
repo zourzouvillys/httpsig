@@ -104,7 +104,28 @@ var webClient = WebClient.builder()
     .build();
 ```
 
-## Algorithms
+## Key Management
+
+### Auto-Detection (Recommended)
+
+```java
+// Auto-detect algorithm from JCA key type
+var signing = Keys.signingKey("my-key-id", privateKey);
+var verifying = Keys.verifyingKey("my-key-id", publicKey);
+
+// KeyPair from java.security.KeyPair (auto-detects)
+var kp = Keys.keyPair("my-key-id", jcaKeyPair);
+
+// KeyPair from explicit keys
+var kp = Keys.keyPair("my-key-id", privateKey, publicKey);
+
+// HMAC KeyPair
+var kp = Keys.hmacKeyPair("my-key-id", secret);
+```
+
+The `KeyPair` record bundles a `SigningKey` and `VerifyingKey` with `keyId()` and `algorithm()` accessors.
+
+### Explicit Algorithm Constructors
 
 | Algorithm | Signing Key | Verifying Key |
 |---|---|---|

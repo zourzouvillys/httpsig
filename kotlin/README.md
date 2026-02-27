@@ -101,7 +101,28 @@ val client = HttpClient(CIO) {
 }
 ```
 
-## Algorithms
+## Key Management
+
+### Auto-Detection (Recommended)
+
+```kotlin
+// Auto-detect algorithm from JCA key type
+val signing = Keys.signingKey("my-key-id", privateKey)
+val verifying = Keys.verifyingKey("my-key-id", publicKey)
+
+// KeyPair from java.security.KeyPair (auto-detects)
+val kp = Keys.keyPair("my-key-id", jcaKeyPair)
+
+// KeyPair from explicit keys
+val kp = Keys.keyPair("my-key-id", privateKey, publicKey)
+
+// HMAC KeyPair
+val kp = Keys.hmacKeyPair("my-key-id", secret)
+```
+
+The `KeyPair` data class bundles a `SigningKey` and `VerifyingKey` with computed `keyId` and `algorithm` properties.
+
+### Explicit Algorithm Constructors
 
 | Algorithm | Sealed class | Signing Key | Verifying Key |
 |---|---|---|---|

@@ -101,7 +101,30 @@ session.request("https://example.com/api").response { response in
 }
 ```
 
-## Algorithms
+## Key Management
+
+### KeyPair (Recommended)
+
+Static factory methods create a `KeyPair` bundling both signing and verifying keys:
+
+```swift
+let kp = KeyPair.ed25519(keyId: "my-key", privateKey: ed25519PrivateKey)
+let kp = KeyPair.ecdsaP256(keyId: "my-key", privateKey: p256PrivateKey)
+let kp = KeyPair.rsaPSS(keyId: "my-key", secKey: rsaSecKey)
+let kp = KeyPair.hmacSHA256(keyId: "my-key", secret: sharedSecret)
+```
+
+### Secure Enclave
+
+`SecureEnclaveSigningKey` wraps a `SecureEnclave.P256.Signing.PrivateKey` with a computed `verifyingKey`:
+
+```swift
+let seKey = SecureEnclave.P256.Signing.PrivateKey()
+let signingKey = SecureEnclaveSigningKey(keyId: "se-key", privateKey: seKey)
+// signingKey.verifyingKey is derived automatically
+```
+
+### Explicit Algorithm Constructors
 
 | Algorithm | Signing Key | Verifying Key |
 |---|---|---|

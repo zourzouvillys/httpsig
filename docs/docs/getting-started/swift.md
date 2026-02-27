@@ -39,9 +39,10 @@ The crypto implementation uses CryptoKit for Ed25519, ECDSA P-256, and HMAC, and
 import HTTPSig
 import CryptoKit
 
-// Create a signing key
+// Create a key pair (static factory per algorithm)
 let privateKey = Curve25519.Signing.PrivateKey()
-let key = Ed25519SigningKey(keyId: "my-key-id", privateKey: privateKey)
+let kp = KeyPair.ed25519(keyId: "my-key-id", privateKey: privateKey)
+let key = kp.signingKey
 
 // Build signature parameters
 let params = SignatureParameters(
@@ -133,6 +134,19 @@ let response = await session.request("https://example.com/api").serializingData(
 ```
 
 See the [Integrations Guide](/docs/guides/integrations) for more details.
+
+## Secure Enclave
+
+On Apple platforms, use `SecureEnclaveSigningKey` for hardware-backed P-256 keys:
+
+```swift
+import HTTPSig
+import CryptoKit
+
+let seKey = SecureEnclave.P256.Signing.PrivateKey()
+let signingKey = SecureEnclaveSigningKey(keyId: "se-key", privateKey: seKey)
+// The verifying key is derived automatically from the Secure Enclave key
+```
 
 ## Notes
 

@@ -12,6 +12,7 @@ export type {
   HttpMessage,
   SigningKey,
   VerifyingKey,
+  KeyPair,
   KeyProvider,
   SignResult,
   VerifyResult,
@@ -53,6 +54,7 @@ export {
 export {
   component,
   componentWithParams,
+  componentWithKey,
   queryParam,
   componentReq,
   extractComponent,
@@ -76,6 +78,12 @@ export {
   newEd25519SigningKey,
   newEd25519VerifyingKey,
   newHMACSHA256Key,
+  newSigningKey,
+  newVerifyingKey,
+  newKeyPair,
+  newHMACKeyPair,
+  newWebCryptoSigningKey,
+  newWebCryptoVerifyingKey,
 } from "./keys.js";
 
 // Content-Digest

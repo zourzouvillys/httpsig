@@ -15,6 +15,9 @@ npm run build           # compile to dist/
 - Package: `@zourzouvillys/httpsig`, ESM-only
 - Node.js 20+, zero runtime dependencies (axios is an optional peer dep)
 - All sign/verify APIs are `async` (returns `Promise`) for future Web Crypto compatibility
+- `newKeyPair()` / `newSigningKey()` / `newVerifyingKey()` auto-detect algorithm from `KeyObject`
+- `KeyPair` interface bundles `signingKey` + `verifyingKey` with `keyId` and `algorithm`
+- `newWebCryptoSigningKey()` / `newWebCryptoVerifyingKey()` adapt Web Crypto `CryptoKey` (algorithm must be specified)
 - Key constructors use `node:crypto` `KeyObject` instances
 - `SignatureParameters` is a plain object: `{ components, keyId, created, expires, nonce, tag }`
 - `ComponentIdentifier` is `{ name: string; params?: Record<string, string | boolean> }`

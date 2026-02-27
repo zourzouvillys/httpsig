@@ -16,13 +16,14 @@ Requires Node.js 20 or later. The package is ESM-only.
 
 ```typescript
 import { signMessage, signatureInputHeader, signatureHeader } from '@zourzouvillys/httpsig';
-import { newEd25519SigningKey } from '@zourzouvillys/httpsig';
+import { newKeyPair } from '@zourzouvillys/httpsig';
 import { component } from '@zourzouvillys/httpsig';
 import * as crypto from 'node:crypto';
 
-// Create a signing key
-const keyPair = crypto.generateKeyPairSync('ed25519');
-const key = newEd25519SigningKey('my-key-id', keyPair.privateKey);
+// Create a key pair (auto-detects algorithm from key type)
+const cryptoKp = crypto.generateKeyPairSync('ed25519');
+const kp = newKeyPair('my-key-id', cryptoKp.privateKey);
+const key = kp.signingKey;
 
 // Build the message representation
 const url = new URL('https://example.com/api/resource');
@@ -58,16 +59,15 @@ Note that all sign and verify operations are `async` to support Web Crypto API b
 
 ```typescript
 import { verifyMessage } from '@zourzouvillys/httpsig';
-import { newEd25519VerifyingKey } from '@zourzouvillys/httpsig';
+import { newVerifyingKey } from '@zourzouvillys/httpsig';
 import { component } from '@zourzouvillys/httpsig';
 import type { KeyProvider } from '@zourzouvillys/httpsig';
 
-// Set up a KeyProvider
+// Set up a KeyProvider (auto-detects algorithm from key type)
 const provider: KeyProvider = async (keyId, algorithm) => {
-  if (keyId === 'my-key-id') {
-    return newEd25519VerifyingKey(keyId, publicKey);
-  }
-  throw new Error(`unknown key: ${keyId}`);
+  const pub = await loadPublicKey(keyId);
+  if (!pub) throw new Error(`unknown key: ${keyId}`);
+  return newVerifyingKey(keyId, pub);
 };
 
 // Verify (msg has Signature and Signature-Input headers)
@@ -120,3 +120,16 @@ const { statusCode, body } = await signedRequest('https://example.com/api');
 ```
 
 See the [Integrations Guide](/docs/guides/integrations) for more details.
+
+## Web Crypto API
+
+For browser or edge runtimes, use the Web Crypto adapters:
+
+```typescript
+import { newWebCryptoSigningKey, newWebCryptoVerifyingKey } from '@zourzouvillys/httpsig';
+
+const cryptoKey = await crypto.subtle.generateKey('Ed25519', true, ['sign', 'verify']);
+
+const signingKey = newWebCryptoSigningKey('my-key', cryptoKey.privateKey, 'ed25519');
+const verifyingKey = newWebCryptoVerifyingKey('my-key', cryptoKey.publicKey, 'ed25519');
+```

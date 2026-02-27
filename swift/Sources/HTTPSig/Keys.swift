@@ -305,6 +305,43 @@ public struct HMACSHA256Key: SigningKey, VerifyingKey {
     }
 }
 
+// MARK: - Secure Enclave
+
+/// ECDSA P-256 signing key backed by the Secure Enclave.
+///
+/// The Secure Enclave provides hardware-backed key storage where the private key
+/// never leaves the secure hardware. The algorithm is always `.ecdsaP256Sha256`.
+///
+/// Only available on devices with a Secure Enclave (most Apple devices since 2013).
+@available(macOS 10.15, iOS 13.0, tvOS 13.0, watchOS 6.0, *)
+public struct SecureEnclaveSigningKey: SigningKey, Sendable {
+    public let keyId: String
+    public let algorithm: Algorithm = .ecdsaP256Sha256
+    private let key: SecureEnclave.P256.Signing.PrivateKey
+
+    /// The corresponding verifying key. The public key is always extractable from the Secure Enclave.
+    public var verifyingKey: ECDSAP256VerifyingKey {
+        ECDSAP256VerifyingKey(keyId: keyId, publicKey: key.publicKey)
+    }
+
+    /// Create a new P-256 key in the Secure Enclave.
+    public init(keyId: String) throws {
+        self.keyId = keyId
+        self.key = try SecureEnclave.P256.Signing.PrivateKey()
+    }
+
+    /// Wrap an existing Secure Enclave P-256 signing key.
+    public init(keyId: String, key: SecureEnclave.P256.Signing.PrivateKey) {
+        self.keyId = keyId
+        self.key = key
+    }
+
+    public func sign(_ data: Data) throws -> Data {
+        let sig = try key.signature(for: SHA256.hash(data: data))
+        return sig.rawRepresentation
+    }
+}
+
 // MARK: - PEM Helpers
 
 public enum PEMUtils {

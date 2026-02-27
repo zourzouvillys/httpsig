@@ -8,7 +8,7 @@ This guide covers verifying HTTP Message Signatures in all five languages.
 
 ## Step 1: Implement a KeyProvider
 
-The `KeyProvider` resolves a key ID (from the signature metadata) to a `VerifyingKey`. This is where you look up keys from your database, JWKS endpoint, configuration file, or wherever you store them.
+The `KeyProvider` resolves a key ID (from the signature metadata) to a `VerifyingKey`. This is where you look up keys from your database, JWKS endpoint, configuration file, or wherever you store them. The auto-detect constructors infer the algorithm from the public key type, so a single provider can handle multiple algorithms.
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -17,16 +17,13 @@ import TabItem from '@theme/TabItem';
 <TabItem value="go" label="Go">
 
 ```go
-// Go: KeyProvider is a function type
+// Go: KeyProvider is a function type. Auto-detect handles mixed key types.
 provider := func(keyID string, alg httpsig.Algorithm) (httpsig.VerifyingKey, error) {
-    switch keyID {
-    case "client-a":
-        return httpsig.NewEd25519VerifyingKey(keyID, clientAPublicKey), nil
-    case "client-b":
-        return httpsig.NewECDSAP256VerifyingKey(keyID, clientBPublicKey), nil
-    default:
+    pub, ok := keyRegistry[keyID]
+    if !ok {
         return nil, fmt.Errorf("unknown key: %s", keyID)
     }
+    return httpsig.NewVerifyingKeyFromPublic(keyID, pub)
 }
 ```
 
@@ -35,12 +32,12 @@ provider := func(keyID string, alg httpsig.Algorithm) (httpsig.VerifyingKey, err
 
 ```typescript
 import type { KeyProvider } from '@zourzouvillys/httpsig';
-import { newEd25519VerifyingKey } from '@zourzouvillys/httpsig';
+import { newVerifyingKey } from '@zourzouvillys/httpsig';
 
 const provider: KeyProvider = async (keyId, algorithm) => {
   const publicKey = await loadPublicKey(keyId);
   if (!publicKey) throw new Error(`unknown key: ${keyId}`);
-  return newEd25519VerifyingKey(keyId, publicKey);
+  return newVerifyingKey(keyId, publicKey); // auto-detects algorithm
 };
 ```
 
@@ -48,11 +45,11 @@ const provider: KeyProvider = async (keyId, algorithm) => {
 <TabItem value="java" label="Java">
 
 ```java
-// Java: KeyProvider is a @FunctionalInterface
+// Java: KeyProvider is a @FunctionalInterface. Auto-detect from JCA key type.
 KeyProvider provider = (keyId, algorithm) -> {
     PublicKey pub = keyStore.get(keyId);
     if (pub == null) return null;
-    return Keys.ed25519VerifyingKey(keyId, pub);
+    return Keys.verifyingKey(keyId, pub); // auto-detects algorithm
 };
 ```
 
@@ -75,10 +72,10 @@ struct MyKeyProvider: KeyProvider {
 <TabItem value="kotlin" label="Kotlin">
 
 ```kotlin
-// Kotlin: KeyProvider is a fun interface (SAM)
-val provider = KeyProvider { keyId, algorithm ->
+// Kotlin: KeyProvider is a fun interface (SAM). Auto-detect from JCA key type.
+val provider = KeyProvider { keyId, _ ->
     val pub = keyStore[keyId] ?: return@KeyProvider null
-    Keys.ed25519VerifyingKey(keyId, pub)
+    Keys.verifyingKey(keyId, pub) // auto-detects algorithm
 }
 ```
 

@@ -50,9 +50,113 @@ type VerifyingKey interface {
 }
 ```
 
+## KeyPair
+
+A `KeyPair` bundles a `SigningKey` and `VerifyingKey` that share the same key ID and algorithm. This is the recommended way to manage keys when you need both sides (e.g., a client that signs requests and verifies responses).
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
+<Tabs groupId="language">
+<TabItem value="go" label="Go">
+
+```go
+// Auto-detect algorithm from key type, derive public key
+kp, err := httpsig.NewKeyPair("my-key-id", privateKey)
+
+// HMAC (symmetric)
+kp := httpsig.NewHMACKeyPair("my-key-id", secret)
+```
+
+</TabItem>
+<TabItem value="typescript" label="TypeScript">
+
+```typescript
+// Auto-detect algorithm, derive public key
+const kp = newKeyPair('my-key-id', privateKeyObject);
+
+// HMAC (symmetric)
+const kp = newHMACKeyPair('my-key-id', secret);
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+// From java.security.KeyPair (auto-detects algorithm)
+var kp = Keys.keyPair("my-key-id", jcaKeyPair);
+
+// HMAC (symmetric)
+var kp = Keys.hmacKeyPair("my-key-id", secret);
+```
+
+</TabItem>
+<TabItem value="swift" label="Swift">
+
+```swift
+// Static factories per algorithm
+let kp = KeyPair.ed25519(keyId: "my-key", privateKey: privKey)
+let kp = KeyPair.hmacSHA256(keyId: "my-key", secret: secret)
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+// From java.security.KeyPair (auto-detects algorithm)
+val kp = Keys.keyPair("my-key-id", jcaKeyPair)
+
+// HMAC (symmetric)
+val kp = Keys.hmacKeyPair("my-key-id", secret)
+```
+
+</TabItem>
+</Tabs>
+
+## Auto-Detection
+
+Instead of choosing an algorithm-specific constructor, you can pass any standard private or public key and let the library detect the algorithm:
+
+<Tabs groupId="language">
+<TabItem value="go" label="Go">
+
+```go
+signingKey, err := httpsig.NewSigningKeyFromSigner("my-key", signer)
+verifyingKey, err := httpsig.NewVerifyingKeyFromPublic("my-key", pubKey)
+```
+
+</TabItem>
+<TabItem value="typescript" label="TypeScript">
+
+```typescript
+const signingKey = newSigningKey('my-key', privateKeyObject);
+const verifyingKey = newVerifyingKey('my-key', publicKeyObject);
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+var signingKey = Keys.signingKey("my-key", privateKey);
+var verifyingKey = Keys.verifyingKey("my-key", publicKey);
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val signingKey = Keys.signingKey("my-key", privateKey)
+val verifyingKey = Keys.verifyingKey("my-key", publicKey)
+```
+
+</TabItem>
+</Tabs>
+
+Swift uses per-algorithm `KeyPair` factories rather than runtime auto-detection, since CryptoKit types are statically typed.
+
 ## In-Memory Keys
 
-The simplest approach. Every language provides factory functions for each algorithm:
+The explicit-algorithm approach. Every language provides factory functions for each algorithm:
 
 | Algorithm        | Go                              | TypeScript                     | Java                              | Swift                         | Kotlin                         |
 |------------------|---------------------------------|--------------------------------|-----------------------------------|-------------------------------|--------------------------------|
@@ -66,17 +170,13 @@ HMAC keys implement both `SigningKey` and `VerifyingKey` since the same secret i
 
 ## HSM and PKCS#11 (Go)
 
-Go's `crypto.Signer` interface is implemented by most HSM and PKCS#11 libraries. The `NewSignerKey` function wraps any `crypto.Signer` as a `SigningKey`:
+Go's `crypto.Signer` interface is implemented by most HSM and PKCS#11 libraries. `NewSigningKeyFromSigner` auto-detects the algorithm from the signer's public key:
 
 ```go
-import (
-    "crypto"
-    "github.com/zourzouvillys/httpsig/golang"
-)
+// Auto-detect algorithm from the signer's public key type
+key, err := httpsig.NewSigningKeyFromSigner("hsm-key-id", hsmSigner)
 
-// hsmSigner implements crypto.Signer, backed by your HSM
-var hsmSigner crypto.Signer = getHSMSigner()
-
+// Or specify the algorithm explicitly
 key, err := httpsig.NewSignerKey("hsm-key-id", httpsig.AlgorithmEd25519, hsmSigner)
 ```
 
@@ -89,35 +189,18 @@ This works with any Go library that provides `crypto.Signer`, including:
 
 ## Apple Secure Enclave (Swift)
 
-On Apple platforms, the Secure Enclave provides hardware-backed key storage for P-256 keys. You can use `SecKey` directly with `ECDSAP256SigningKey` or `RSAPSSSigningKey`:
+On Apple platforms, the Secure Enclave provides hardware-backed P-256 key storage. Use `SecureEnclaveSigningKey` for a streamlined API that automatically derives the verifying key:
 
 ```swift
 import HTTPSig
-import Security
+import CryptoKit
 
-// Create or load a Secure Enclave key
-let access = SecAccessControlCreateWithFlags(
-    nil,
-    kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
-    .privateKeyUsage,
-    nil
-)!
-
-let attributes: [String: Any] = [
-    kSecAttrKeyType as String: kSecAttrKeyTypeECSECPrimeRandom,
-    kSecAttrKeySizeInBits as String: 256,
-    kSecAttrTokenID as String: kSecAttrTokenIDSecureEnclave,
-    kSecPrivateKeyAttrs as String: [
-        kSecAttrAccessControl as String: access,
-    ],
-]
-
-var error: Unmanaged<CFError>?
-let privateKey = SecKeyCreateRandomKey(attributes as CFDictionary, &error)!
-
-// The key never leaves the Secure Enclave
-let signingKey = RSAPSSSigningKey(keyId: "se-key", secKey: privateKey)
+let seKey = SecureEnclave.P256.Signing.PrivateKey()
+let signingKey = SecureEnclaveSigningKey(keyId: "se-key", privateKey: seKey)
+// signingKey.verifyingKey is derived automatically
 ```
+
+For lower-level `SecKey`-based access, you can also use `KeyPair.rsaPSS(keyId:secKey:)` or the explicit constructors directly.
 
 ## Android Keystore (Kotlin/Java)
 
@@ -144,29 +227,21 @@ keyGen.generateKeyPair()
 // Load and use
 val keyStore = KeyStore.getInstance("AndroidKeyStore").apply { load(null) }
 val privateKey = keyStore.getKey("my-key-id", null) as java.security.PrivateKey
-val signingKey = Keys.ecdsaP256SigningKey("my-key-id", privateKey)
+val signingKey = Keys.signingKey("my-key-id", privateKey) // auto-detects ECDSA P-256
 ```
 
 ## Web Crypto API (TypeScript)
 
-TypeScript's sign/verify operations are `async` specifically to support the Web Crypto API. You can implement the `SigningKey` interface using `crypto.subtle`:
+TypeScript's sign/verify operations are `async` specifically to support the Web Crypto API. Built-in adapters wrap `CryptoKey` instances:
 
 ```typescript
-import type { SigningKey, Algorithm } from '@zourzouvillys/httpsig';
+import { newWebCryptoSigningKey, newWebCryptoVerifyingKey } from '@zourzouvillys/httpsig';
 
-class WebCryptoSigningKey implements SigningKey {
-  constructor(
-    public readonly keyId: string,
-    public readonly algorithm: Algorithm,
-    private readonly cryptoKey: CryptoKey,
-  ) {}
-
-  async sign(data: Uint8Array): Promise<Uint8Array> {
-    const sig = await crypto.subtle.sign('Ed25519', this.cryptoKey, data);
-    return new Uint8Array(sig);
-  }
-}
+const signingKey = newWebCryptoSigningKey('my-key', cryptoKey, 'ed25519');
+const verifyingKey = newWebCryptoVerifyingKey('my-key', cryptoKey, 'ed25519');
 ```
+
+The algorithm must be specified explicitly since `CryptoKey` does not expose a standard type field that maps directly to RFC 9421 algorithm identifiers.
 
 ## KeyProvider
 

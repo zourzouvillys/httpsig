@@ -18,6 +18,8 @@ swift test      # run all tests
 - Headers stored as `[(String, String)]` tuples for multi-value support
 - `SFVParams` is an ordered map (preserves parameter insertion order)
 - `SFVParser` is a `~Copyable` struct (move-only, consumed during parsing)
+- `KeyPair` struct with static factories: `.ed25519()`, `.ecdsaP256()`, `.rsaPSS()`, `.hmacSHA256()`
+- `SecureEnclaveSigningKey` wraps `SecureEnclave.P256.Signing.PrivateKey` with computed `verifyingKey`
 - `Signer` / `Verifier` are enum namespaces (no instances)
 - `VerifyOptions.maxClockSkew` rejects future-dated `created` timestamps (seconds)
 - `HttpSigError.signatureFutureDated` for future-dated rejection

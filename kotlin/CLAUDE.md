@@ -20,6 +20,9 @@ cd kotlin
 - `KeyProvider` is a `fun interface` (supports SAM lambda conversion)
 - `VerifyOptions.maxClockSkew` rejects future-dated `created` timestamps
 - Verifier checks `alg` parameter against resolved key's algorithm
+- `KeyPair` data class bundles `signingKey` + `verifyingKey` with computed `keyId` and `algorithm`
+- `Keys.signingKey()` / `Keys.verifyingKey()` auto-detect algorithm from JCA key type
+- `Keys.keyPair()` bridges from `java.security.KeyPair` or explicit `PrivateKey` + `PublicKey`
 - `Signer` / `Verifier` / `Keys` / `SFV` are `object` singletons
 - `SignatureParameters` uses builder: `.builder().component("x").keyId("y").build()`
 - `ComponentIdentifier` is a data class

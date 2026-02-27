@@ -14,7 +14,10 @@ go vet ./...           # static analysis
 - Module path: `github.com/zourzouvillys/httpsig/golang`
 - Go 1.22+, zero external dependencies
 - `KeyProvider` is a function type: `func(keyID string, algorithm Algorithm) (VerifyingKey, error)`
-- `NewSignerKey()` supports `crypto.Signer` for HSM/PKCS#11 backends
+- `NewKeyPair()` auto-detects algorithm from `crypto.PrivateKey`; `NewHMACKeyPair()` for symmetric
+- `NewSigningKeyFromSigner()` / `NewVerifyingKeyFromPublic()` auto-detect algorithm from key type
+- `KeyPair` struct bundles `Signing` + `Verifying` keys with `KeyID()` and `Algorithm()`
+- `NewSignerKey()` supports `crypto.Signer` for HSM/PKCS#11 backends (prefer `NewSigningKeyFromSigner` when algorithm can be inferred)
 - Errors use sentinel values: `ErrMissingSignature`, `ErrInvalidSignature`, `ErrKeyNotFound`, `ErrSignatureFutureDated`, `ErrAlgorithmMismatch`, etc.
 - `VerifyOptions.MaxClockSkew` rejects future-dated `created` timestamps
 - Verifier checks `alg` parameter against resolved key's `Algorithm()` and returns key-derived values in `VerifyResult`

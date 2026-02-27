@@ -49,6 +49,7 @@ Each language implements the same core abstractions:
 | **ComponentIdentifier** | Header name or derived component (@method, @path, etc.) with optional params |
 | **SignatureParameters** | Components + keyId + created/expires/nonce/tag + optional algorithm |
 | **SigningKey / VerifyingKey** | Interfaces wrapping crypto keys |
+| **KeyPair** | Bundles a SigningKey + VerifyingKey with shared keyId and algorithm |
 | **KeyProvider** | Resolves keyId to VerifyingKey |
 | **Signer / Verifier** | Top-level sign and verify operations |
 | **ContentDigest** | RFC 9530 SHA-256/SHA-512 digest |

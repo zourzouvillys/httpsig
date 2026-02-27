@@ -127,4 +127,81 @@ public final class Keys {
             return Algorithms.hmacVerify(secret, data, signature);
         }
     }
+
+    // ---- Auto-detection ----
+
+    /**
+     * Create a SigningKey by auto-detecting the algorithm from the JCA key type.
+     *
+     * <p>Supports RSA/RSASSA-PSS (maps to rsa-pss-sha512), EC with P-256 curve
+     * (maps to ecdsa-p256-sha256), and Ed25519/EdDSA (maps to ed25519).</p>
+     */
+    public static SigningKey signingKey(String keyId, PrivateKey key) {
+        Objects.requireNonNull(keyId);
+        Objects.requireNonNull(key);
+        Algorithm alg = detectAlgorithm(key.getAlgorithm());
+        return switch (alg) {
+            case RSA_PSS_SHA512 -> rsaPSSSigningKey(keyId, key);
+            case ECDSA_P256_SHA256 -> ecdsaP256SigningKey(keyId, key);
+            case ED25519 -> ed25519SigningKey(keyId, key);
+            default -> throw new IllegalArgumentException("unsupported key algorithm: " + key.getAlgorithm());
+        };
+    }
+
+    /**
+     * Create a VerifyingKey by auto-detecting the algorithm from the JCA key type.
+     */
+    public static VerifyingKey verifyingKey(String keyId, PublicKey key) {
+        Objects.requireNonNull(keyId);
+        Objects.requireNonNull(key);
+        Algorithm alg = detectAlgorithm(key.getAlgorithm());
+        return switch (alg) {
+            case RSA_PSS_SHA512 -> rsaPSSVerifyingKey(keyId, key);
+            case ECDSA_P256_SHA256 -> ecdsaP256VerifyingKey(keyId, key);
+            case ED25519 -> ed25519VerifyingKey(keyId, key);
+            default -> throw new IllegalArgumentException("unsupported key algorithm: " + key.getAlgorithm());
+        };
+    }
+
+    /**
+     * Create a KeyPair from a JCA {@link java.security.KeyPair}, auto-detecting the algorithm.
+     */
+    public static io.zrz.httpsig.KeyPair keyPair(String keyId, java.security.KeyPair jcaKeyPair) {
+        Objects.requireNonNull(keyId);
+        Objects.requireNonNull(jcaKeyPair);
+        return new io.zrz.httpsig.KeyPair(
+            signingKey(keyId, jcaKeyPair.getPrivate()),
+            verifyingKey(keyId, jcaKeyPair.getPublic())
+        );
+    }
+
+    /**
+     * Create a KeyPair from explicit private and public keys, auto-detecting the algorithm.
+     */
+    public static io.zrz.httpsig.KeyPair keyPair(String keyId, PrivateKey privateKey, PublicKey publicKey) {
+        Objects.requireNonNull(keyId);
+        Objects.requireNonNull(privateKey);
+        Objects.requireNonNull(publicKey);
+        return new io.zrz.httpsig.KeyPair(
+            signingKey(keyId, privateKey),
+            verifyingKey(keyId, publicKey)
+        );
+    }
+
+    /**
+     * Create an HMAC KeyPair where the same secret backs both sides.
+     */
+    public static io.zrz.httpsig.KeyPair hmacKeyPair(String keyId, byte[] secret) {
+        HmacKey key = hmacSHA256Key(keyId, secret);
+        return new io.zrz.httpsig.KeyPair(key, key);
+    }
+
+    private static Algorithm detectAlgorithm(String jcaAlgorithm) {
+        return switch (jcaAlgorithm) {
+            case "RSA", "RSASSA-PSS" -> Algorithm.RSA_PSS_SHA512;
+            case "EC", "ECDSA" -> Algorithm.ECDSA_P256_SHA256;
+            case "Ed25519", "EdDSA" -> Algorithm.ED25519;
+            default -> throw new IllegalArgumentException("unsupported JCA algorithm: " + jcaAlgorithm);
+        };
+    }
 }

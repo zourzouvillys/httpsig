@@ -35,8 +35,9 @@ Requires Java 17 or later.
 import io.zrz.httpsig.*;
 import java.time.Instant;
 
-// Create a signing key (Ed25519)
-SigningKey key = Keys.ed25519SigningKey("my-key-id", privateKey);
+// Create a key pair (auto-detects algorithm from JCA key type)
+var kp = Keys.keyPair("my-key-id", KeyPairGenerator.getInstance("Ed25519").generateKeyPair());
+var key = kp.signingKey();
 
 // Build signature parameters
 var params = SignatureParameters.builder()
@@ -61,12 +62,11 @@ request.addHeader("Signature", Signer.signatureHeader(result));
 ```java
 import io.zrz.httpsig.*;
 
-// Set up a KeyProvider
+// Set up a KeyProvider (auto-detects algorithm from JCA key type)
 KeyProvider provider = (keyId, algorithm) -> {
-    if ("my-key-id".equals(keyId)) {
-        return Keys.ed25519VerifyingKey(keyId, publicKey);
-    }
-    return null;
+    PublicKey pub = keyStore.get(keyId);
+    if (pub == null) return null;
+    return Keys.verifyingKey(keyId, pub);
 };
 
 // Verify

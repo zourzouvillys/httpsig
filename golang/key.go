@@ -4,6 +4,7 @@ import (
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/ed25519"
+	"crypto/elliptic"
 	"crypto/rsa"
 	"fmt"
 )
@@ -117,4 +118,79 @@ func NewSignerKey(keyID string, alg Algorithm, signer crypto.Signer) (SigningKey
 	default:
 		return nil, fmt.Errorf("%w: %s not supported with crypto.Signer", ErrUnknownAlgorithm, alg)
 	}
+}
+
+// --- KeyPair and auto-detection ---
+
+// KeyPair bundles a SigningKey and VerifyingKey that share the same key ID and algorithm.
+type KeyPair struct {
+	Signing   SigningKey
+	Verifying VerifyingKey
+}
+
+// KeyID returns the key ID shared by both halves.
+func (kp *KeyPair) KeyID() string { return kp.Signing.KeyID() }
+
+// Algorithm returns the algorithm shared by both halves.
+func (kp *KeyPair) Algorithm() Algorithm { return kp.Signing.Algorithm() }
+
+// detectAlgorithm infers the Algorithm from a public key's concrete type.
+func detectAlgorithm(pub crypto.PublicKey) (Algorithm, error) {
+	switch k := pub.(type) {
+	case *rsa.PublicKey:
+		return AlgorithmRSAPSSSHA512, nil
+	case *ecdsa.PublicKey:
+		if k.Curve == elliptic.P256() {
+			return AlgorithmECDSAP256SHA256, nil
+		}
+		return "", fmt.Errorf("%w: unsupported EC curve", ErrInvalidKey)
+	case ed25519.PublicKey:
+		return AlgorithmEd25519, nil
+	default:
+		return "", fmt.Errorf("%w: unsupported key type %T", ErrInvalidKey, pub)
+	}
+}
+
+// NewKeyPair creates a KeyPair by auto-detecting the algorithm from the private key type
+// and deriving the corresponding public key.
+func NewKeyPair(keyID string, key crypto.PrivateKey) (*KeyPair, error) {
+	signer, ok := key.(crypto.Signer)
+	if !ok {
+		return nil, fmt.Errorf("%w: key does not implement crypto.Signer", ErrInvalidKey)
+	}
+	pub := signer.Public()
+	alg, err := detectAlgorithm(pub)
+	if err != nil {
+		return nil, err
+	}
+	return &KeyPair{
+		Signing:   &asymmetricSigningKey{keyID: keyID, alg: alg, key: signer},
+		Verifying: &asymmetricVerifyingKey{keyID: keyID, alg: alg, pub: pub},
+	}, nil
+}
+
+// NewHMACKeyPair creates a KeyPair for HMAC-SHA256 where the same secret backs both sides.
+func NewHMACKeyPair(keyID string, secret []byte) *KeyPair {
+	k := NewHMACSHA256Key(keyID, secret)
+	return &KeyPair{Signing: k, Verifying: k}
+}
+
+// NewSigningKeyFromSigner creates a SigningKey by auto-detecting the algorithm from the
+// signer's public key type. This is the auto-detecting alternative to NewSignerKey.
+func NewSigningKeyFromSigner(keyID string, signer crypto.Signer) (SigningKey, error) {
+	alg, err := detectAlgorithm(signer.Public())
+	if err != nil {
+		return nil, err
+	}
+	return &asymmetricSigningKey{keyID: keyID, alg: alg, key: signer}, nil
+}
+
+// NewVerifyingKeyFromPublic creates a VerifyingKey by auto-detecting the algorithm from
+// the public key type.
+func NewVerifyingKeyFromPublic(keyID string, pub crypto.PublicKey) (VerifyingKey, error) {
+	alg, err := detectAlgorithm(pub)
+	if err != nil {
+		return nil, err
+	}
+	return &asymmetricVerifyingKey{keyID: keyID, alg: alg, pub: pub}, nil
 }

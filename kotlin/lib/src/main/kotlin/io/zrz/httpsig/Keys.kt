@@ -83,4 +83,65 @@ object Keys {
         override fun verify(data: ByteArray, signature: ByteArray): Boolean =
             Algorithms.hmacVerify(secret, data, signature)
     }
+
+    // ---- Auto-detection ----
+
+    /**
+     * Create a [SigningKey] by auto-detecting the algorithm from the JCA key type.
+     */
+    fun signingKey(keyId: String, key: PrivateKey): SigningKey =
+        when (detectAlgorithm(key.algorithm)) {
+            Algorithm.RsaPssSha512 -> rsaPSSSigningKey(keyId, key)
+            Algorithm.EcdsaP256Sha256 -> ecdsaP256SigningKey(keyId, key)
+            Algorithm.Ed25519 -> ed25519SigningKey(keyId, key)
+            Algorithm.HmacSha256 -> throw IllegalArgumentException(
+                "HMAC keys are symmetric; use hmacSHA256Key() instead"
+            )
+        }
+
+    /**
+     * Create a [VerifyingKey] by auto-detecting the algorithm from the JCA key type.
+     */
+    fun verifyingKey(keyId: String, key: PublicKey): VerifyingKey =
+        when (detectAlgorithm(key.algorithm)) {
+            Algorithm.RsaPssSha512 -> rsaPSSVerifyingKey(keyId, key)
+            Algorithm.EcdsaP256Sha256 -> ecdsaP256VerifyingKey(keyId, key)
+            Algorithm.Ed25519 -> ed25519VerifyingKey(keyId, key)
+            Algorithm.HmacSha256 -> throw IllegalArgumentException(
+                "HMAC keys are symmetric; use hmacSHA256Key() instead"
+            )
+        }
+
+    /**
+     * Create a [KeyPair] from a JCA [java.security.KeyPair], auto-detecting the algorithm.
+     */
+    fun keyPair(keyId: String, jcaKeyPair: java.security.KeyPair): KeyPair =
+        KeyPair(
+            signingKey(keyId, jcaKeyPair.private),
+            verifyingKey(keyId, jcaKeyPair.public),
+        )
+
+    /**
+     * Create a [KeyPair] from explicit private and public keys, auto-detecting the algorithm.
+     */
+    fun keyPair(keyId: String, privateKey: PrivateKey, publicKey: PublicKey): KeyPair =
+        KeyPair(
+            signingKey(keyId, privateKey),
+            verifyingKey(keyId, publicKey),
+        )
+
+    /**
+     * Create an HMAC [KeyPair] where the same secret backs both sides.
+     */
+    fun hmacKeyPair(keyId: String, secret: ByteArray): KeyPair {
+        val key = hmacSHA256Key(keyId, secret)
+        return KeyPair(key, key)
+    }
+
+    private fun detectAlgorithm(jcaAlgorithm: String): Algorithm = when (jcaAlgorithm) {
+        "RSA", "RSASSA-PSS" -> Algorithm.RsaPssSha512
+        "EC", "ECDSA" -> Algorithm.EcdsaP256Sha256
+        "Ed25519", "EdDSA" -> Algorithm.Ed25519
+        else -> throw IllegalArgumentException("unsupported JCA algorithm: $jcaAlgorithm")
+    }
 }

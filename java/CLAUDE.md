@@ -15,6 +15,9 @@ cd java
 - `SignatureParameters` uses builder pattern: `.builder().component("@method").keyId("x").created(Instant.now()).build()`
 - `ComponentIdentifier` is a Java record with `Map<String, Object>` params
 - `KeyProvider` is a functional interface: `(keyId, algorithm) -> VerifyingKey`
+- `KeyPair` record bundles `signingKey` + `verifyingKey` with `keyId()` and `algorithm()`
+- `Keys.signingKey()` / `Keys.verifyingKey()` auto-detect algorithm from JCA key type
+- `Keys.keyPair()` bridges from `java.security.KeyPair` or explicit `PrivateKey` + `PublicKey`
 - `Keys` is a factory class with static methods for all key types
 - `RawMessage` is a concrete `HttpMessage` for testing
 - Algorithm param in `SignatureParameters` is optional; test vectors omit `alg=`

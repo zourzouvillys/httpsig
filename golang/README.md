@@ -134,7 +134,25 @@ result, err := httpsig.VerifyMessage(respMsg, provider, &httpsig.VerifyOptions{
 
 ## Key Types
 
-Constructors for all supported algorithms:
+### Auto-Detection (Recommended)
+
+Let the library detect the algorithm from the key type:
+
+```go
+// KeyPair from any crypto.PrivateKey (auto-detects algorithm, derives public key)
+kp, err := httpsig.NewKeyPair("my-key-id", privateKey)
+
+// HMAC KeyPair (symmetric)
+kp := httpsig.NewHMACKeyPair("my-key-id", sharedSecret)
+
+// Individual keys with auto-detection
+signingKey, err := httpsig.NewSigningKeyFromSigner("my-key-id", cryptoSigner)
+verifyingKey, err := httpsig.NewVerifyingKeyFromPublic("my-key-id", publicKey)
+```
+
+The `KeyPair` struct bundles a `SigningKey` and `VerifyingKey` together, with `KeyID()` and `Algorithm()` accessors.
+
+### Explicit Algorithm Constructors
 
 ```go
 // Asymmetric keys
@@ -150,7 +168,7 @@ httpsig.NewEd25519VerifyingKey(keyID, ed25519PublicKey)
 // Symmetric (implements both SigningKey and VerifyingKey)
 httpsig.NewHMACSHA256Key(keyID, sharedSecret)
 
-// HSM / PKCS#11 (any crypto.Signer)
+// HSM / PKCS#11 (any crypto.Signer, manual algorithm)
 httpsig.NewSignerKey(keyID, algorithm, cryptoSigner)
 ```
 

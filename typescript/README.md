@@ -87,7 +87,36 @@ const req = createSigningRequest('https://example.com/api', {
 });
 ```
 
-## Algorithms
+## Key Management
+
+### Auto-Detection (Recommended)
+
+```typescript
+import { newKeyPair, newSigningKey, newVerifyingKey } from '@zourzouvillys/httpsig';
+
+// KeyPair from private key (auto-detects algorithm, derives public key)
+const kp = newKeyPair('my-key-id', privateKeyObject);
+
+// Individual keys with auto-detection
+const signing = newSigningKey('my-key-id', privateKeyObject);
+const verifying = newVerifyingKey('my-key-id', publicKeyObject);
+
+// HMAC KeyPair (symmetric)
+const hmacKp = newHMACKeyPair('my-key-id', secret);
+```
+
+### Web Crypto API
+
+For browser or edge runtime environments:
+
+```typescript
+import { newWebCryptoSigningKey, newWebCryptoVerifyingKey } from '@zourzouvillys/httpsig';
+
+const signing = newWebCryptoSigningKey('my-key-id', cryptoKey, 'ed25519');
+const verifying = newWebCryptoVerifyingKey('my-key-id', cryptoKey, 'ed25519');
+```
+
+### Explicit Algorithm Constructors
 
 | Algorithm | Constructor |
 |---|---|
@@ -98,7 +127,7 @@ const req = createSigningRequest('https://example.com/api', {
 
 All key constructors accept `node:crypto` `KeyObject` instances (or `Uint8Array` for HMAC).
 
-Sign/verify APIs are `async` to support future Web Crypto API integration.
+Sign/verify APIs are `async` to support Web Crypto API backends.
 
 ## Development
 
