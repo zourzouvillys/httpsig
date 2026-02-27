@@ -39,6 +39,11 @@ export function componentReq(name: string): ComponentIdentifier {
   return { name: name.toLowerCase(), params: sfvParamsSet(newSFVParams(), "req", true) };
 }
 
+/** Create a component identifier with both ;req and ;key parameters for response signatures that bind to a specific dictionary member from the request. */
+export function componentReqWithKey(name: string, key: string): ComponentIdentifier {
+  return { name: name.toLowerCase(), params: sfvParamsSet(sfvParamsSet(newSFVParams(), "req", true), "key", key) };
+}
+
 function hasParam(c: ComponentIdentifier, key: string): boolean {
   return c.params !== undefined && c.params.keys.includes(key);
 }

@@ -37,6 +37,14 @@ public struct ComponentIdentifier: Sendable, Equatable, Hashable {
         return ComponentIdentifier(name, params: p)
     }
 
+    /// Component with both ;req and ;key parameters for response signatures binding to a specific dictionary member from the request.
+    public static func reqWithKey(_ name: String, key: String) -> ComponentIdentifier {
+        var p = SFVParams()
+        p.set("req", .bool(true))
+        p.set("key", .string(key))
+        return ComponentIdentifier(name, params: p)
+    }
+
     /// Whether this is a derived component (starts with @).
     var isDerived: Bool {
         name.hasPrefix("@")

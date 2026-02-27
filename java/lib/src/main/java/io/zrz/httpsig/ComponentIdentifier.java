@@ -38,6 +38,14 @@ public record ComponentIdentifier(String name, Map<String, Object> params) {
         return new ComponentIdentifier(name, Map.of("key", key));
     }
 
+    /** Component with both ;req and ;key parameters for response signatures binding to a specific dictionary member from the request. */
+    public static ComponentIdentifier reqWithKey(String name, String key) {
+        var params = new LinkedHashMap<String, Object>();
+        params.put("req", true);
+        params.put("key", key);
+        return new ComponentIdentifier(name, params);
+    }
+
     /** Component with arbitrary params. */
     public static ComponentIdentifier withParams(String name, Map<String, Object> params) {
         return new ComponentIdentifier(name, new LinkedHashMap<>(params));

@@ -23,6 +23,7 @@ const sidebars: SidebarsConfig = {
         'concepts/algorithms',
         'concepts/key-management',
         'concepts/content-digest',
+        'concepts/security',
       ],
     },
     {
@@ -31,6 +32,7 @@ const sidebars: SidebarsConfig = {
       items: [
         'guides/signing',
         'guides/verifying',
+        'guides/signing-responses',
         'guides/integrations',
         'guides/proxy-forwarding',
       ],

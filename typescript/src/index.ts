@@ -57,6 +57,7 @@ export {
   componentWithKey,
   queryParam,
   componentReq,
+  componentReqWithKey,
   extractComponent,
 } from "./components.js";
 

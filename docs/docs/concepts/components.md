@@ -30,20 +30,22 @@ All languages provide helpers to create component identifiers:
 // Go
 httpsig.Component("@method")
 httpsig.Component("@authority")
-httpsig.QueryParam("search")                     // @query-param;name="search"
-httpsig.ComponentReq("@method")                  // @method;req (for response signatures)
-httpsig.ComponentWithKey("signature", "sig1")     // "signature";key="sig1" (dictionary member)
+httpsig.QueryParam("search")                          // @query-param;name="search"
+httpsig.ComponentReq("@method")                       // @method;req (for response signatures)
+httpsig.ComponentWithKey("signature", "sig1")          // "signature";key="sig1" (dictionary member)
+httpsig.ComponentReqWithKey("signature", "sig1")       // "signature";req;key="sig1" (request dictionary member)
 ```
 
 ```typescript
 // TypeScript
-import { component, queryParam, componentReq, componentWithKey } from '@zourzouvillys/httpsig';
+import { component, queryParam, componentReq, componentWithKey, componentReqWithKey } from '@zourzouvillys/httpsig';
 
 component('@method');
 component('@authority');
-queryParam('search');                              // @query-param;name="search"
-componentReq('@method');                          // @method;req
-componentWithKey('signature', 'sig1');             // "signature";key="sig1"
+queryParam('search');                                   // @query-param;name="search"
+componentReq('@method');                               // @method;req
+componentWithKey('signature', 'sig1');                  // "signature";key="sig1"
+componentReqWithKey('signature', 'sig1');               // "signature";req;key="sig1"
 ```
 
 ```java
@@ -52,7 +54,8 @@ ComponentIdentifier.of("@method");
 ComponentIdentifier.of("@authority");
 ComponentIdentifier.queryParam("search");
 ComponentIdentifier.req("@method");
-ComponentIdentifier.withKey("signature", "sig1");  // "signature";key="sig1"
+ComponentIdentifier.withKey("signature", "sig1");       // "signature";key="sig1"
+ComponentIdentifier.reqWithKey("signature", "sig1");    // "signature";req;key="sig1"
 ```
 
 ## Header Fields
@@ -104,6 +107,14 @@ In a response signature, include a component from the associated request message
 
 This binds the response signature to the specific request that triggered it.
 
+Parameters can be combined. `;req` with `;key` extracts a dictionary member from a request header:
+
+```
+"signature";req;key="sig1": :Y2xpZW50IHNpZyBieXRlcw==:
+```
+
+This binds the response signature to the client's exact signature bytes. See the [Signing Responses](/docs/guides/signing-responses) guide.
+
 ## Choosing Components
 
 At minimum, request signatures should cover `@method` and `@authority` to prevent the signature from being replayed against a different endpoint. Common choices:
@@ -123,9 +134,14 @@ At minimum, request signatures should cover `@method` and `@authority` to preven
 ("@method" "@path" "@authority" "content-type" "content-digest")
 ```
 
-**Full request binding in response:**
+**Request binding in response:**
 ```
 ("@status" "content-type" "@method";req "@authority";req)
+```
+
+**Full request binding with signature chaining (recommended):**
+```
+("@status" "content-type" "content-digest" "@method";req "@authority";req "signature";req;key="sig1" "signature-input";req;key="sig1")
 ```
 
 The `created` and `keyid` parameters in the signature metadata are also important: `created` enables freshness checking, and `keyid` tells the verifier which key to use.

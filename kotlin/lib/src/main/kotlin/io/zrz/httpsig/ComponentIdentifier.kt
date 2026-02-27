@@ -34,6 +34,10 @@ data class ComponentIdentifier(
         fun withKey(name: String, key: String): ComponentIdentifier =
             ComponentIdentifier(name, mapOf("key" to key))
 
+        /** Component with both ;req and ;key parameters for response signatures binding to a specific dictionary member from the request. */
+        fun reqWithKey(name: String, key: String): ComponentIdentifier =
+            ComponentIdentifier(name, linkedMapOf("req" to true, "key" to key))
+
         /** Component with arbitrary params. */
         fun withParams(name: String, params: Map<String, Any>): ComponentIdentifier =
             ComponentIdentifier(name, LinkedHashMap(params))

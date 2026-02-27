@@ -48,6 +48,16 @@ func ComponentReq(name string) ComponentIdentifier {
 	return ComponentIdentifier{Name: strings.ToLower(name), Params: p}
 }
 
+// ComponentReqWithKey creates a component identifier with both ;req and ;key parameters.
+// Use this in response signatures to bind to a specific dictionary member from the
+// original request (e.g. a specific signature label).
+func ComponentReqWithKey(name string, key string) ComponentIdentifier {
+	p := NewSFVParams()
+	p.Set("req", true)
+	p.Set("key", key)
+	return ComponentIdentifier{Name: strings.ToLower(name), Params: p}
+}
+
 // isDerived returns true if this is a derived component (starts with @).
 func (c ComponentIdentifier) isDerived() bool {
 	return len(c.Name) > 0 && c.Name[0] == '@'
