@@ -29,6 +29,11 @@ export function queryParam(name: string): ComponentIdentifier {
   return { name: "@query-param", params: sfvParamsSet(newSFVParams(), "name", name) };
 }
 
+/** Create a component identifier with the ;key parameter for extracting a single member from a Dictionary Structured Field header. */
+export function componentWithKey(name: string, key: string): ComponentIdentifier {
+  return { name: name.toLowerCase(), params: sfvParamsSet(newSFVParams(), "key", key) };
+}
+
 /** Create a component identifier with the ;req flag for response signatures. */
 export function componentReq(name: string): ComponentIdentifier {
   return { name: name.toLowerCase(), params: sfvParamsSet(newSFVParams(), "req", true) };

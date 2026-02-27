@@ -30,6 +30,16 @@ func QueryParam(name string) ComponentIdentifier {
 	return ComponentIdentifier{Name: "@query-param", Params: p}
 }
 
+// ComponentWithKey creates a component identifier with the ;key parameter for
+// extracting a single member from a Dictionary Structured Field header.
+// For example, ComponentWithKey("signature", "sig1") extracts the "sig1" entry
+// from the Signature dictionary header.
+func ComponentWithKey(name string, key string) ComponentIdentifier {
+	p := NewSFVParams()
+	p.Set("key", key)
+	return ComponentIdentifier{Name: strings.ToLower(name), Params: p}
+}
+
 // ComponentReq creates a component identifier with the ;req flag for request-bound
 // response signatures.
 func ComponentReq(name string) ComponentIdentifier {

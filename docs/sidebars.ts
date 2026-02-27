@@ -32,6 +32,7 @@ const sidebars: SidebarsConfig = {
         'guides/signing',
         'guides/verifying',
         'guides/integrations',
+        'guides/proxy-forwarding',
       ],
     },
   ],

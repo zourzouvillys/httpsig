@@ -33,6 +33,11 @@ public record ComponentIdentifier(String name, Map<String, Object> params) {
         return new ComponentIdentifier(name, Map.of("req", true));
     }
 
+    /** Component with the ;key parameter for extracting a single member from a Dictionary Structured Field header. */
+    public static ComponentIdentifier withKey(String name, String key) {
+        return new ComponentIdentifier(name, Map.of("key", key));
+    }
+
     /** Component with arbitrary params. */
     public static ComponentIdentifier withParams(String name, Map<String, Object> params) {
         return new ComponentIdentifier(name, new LinkedHashMap<>(params));

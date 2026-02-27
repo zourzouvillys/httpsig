@@ -24,24 +24,26 @@ Derived components are computed from the HTTP message structure rather than from
 
 ### Usage in Code
 
-All languages provide a helper to create component identifiers:
+All languages provide helpers to create component identifiers:
 
 ```go
 // Go
 httpsig.Component("@method")
 httpsig.Component("@authority")
-httpsig.QueryParam("search")         // @query-param;name="search"
-httpsig.ComponentReq("@method")      // @method;req (for response signatures)
+httpsig.QueryParam("search")                     // @query-param;name="search"
+httpsig.ComponentReq("@method")                  // @method;req (for response signatures)
+httpsig.ComponentWithKey("signature", "sig1")     // "signature";key="sig1" (dictionary member)
 ```
 
 ```typescript
 // TypeScript
-import { component, queryParam, componentReq } from '@zourzouvillys/httpsig';
+import { component, queryParam, componentReq, componentWithKey } from '@zourzouvillys/httpsig';
 
 component('@method');
 component('@authority');
-queryParam('search');                 // @query-param;name="search"
-componentReq('@method');             // @method;req
+queryParam('search');                              // @query-param;name="search"
+componentReq('@method');                          // @method;req
+componentWithKey('signature', 'sig1');             // "signature";key="sig1"
 ```
 
 ```java
@@ -50,6 +52,7 @@ ComponentIdentifier.of("@method");
 ComponentIdentifier.of("@authority");
 ComponentIdentifier.queryParam("search");
 ComponentIdentifier.req("@method");
+ComponentIdentifier.withKey("signature", "sig1");  // "signature";key="sig1"
 ```
 
 ## Header Fields

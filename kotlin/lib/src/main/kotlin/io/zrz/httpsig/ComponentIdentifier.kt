@@ -30,6 +30,10 @@ data class ComponentIdentifier(
         fun req(name: String): ComponentIdentifier =
             ComponentIdentifier(name, mapOf("req" to true))
 
+        /** Component with the ;key parameter for extracting a single member from a Dictionary Structured Field header. */
+        fun withKey(name: String, key: String): ComponentIdentifier =
+            ComponentIdentifier(name, mapOf("key" to key))
+
         /** Component with arbitrary params. */
         fun withParams(name: String, params: Map<String, Any>): ComponentIdentifier =
             ComponentIdentifier(name, LinkedHashMap(params))

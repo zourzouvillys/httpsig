@@ -30,6 +30,13 @@ public struct ComponentIdentifier: Sendable, Equatable, Hashable {
         return ComponentIdentifier(name, params: p)
     }
 
+    /// Component with the ;key parameter for extracting a single member from a Dictionary Structured Field header.
+    public static func withKey(_ name: String, key: String) -> ComponentIdentifier {
+        var p = SFVParams()
+        p.set("key", .string(key))
+        return ComponentIdentifier(name, params: p)
+    }
+
     /// Whether this is a derived component (starts with @).
     var isDerived: Bool {
         name.hasPrefix("@")
