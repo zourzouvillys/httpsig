@@ -50,17 +50,20 @@ The response is now cryptographically bound to the request's method, path, and b
 
 ### Binding to the Request Signature Itself
 
-The strongest form of binding is to include the client's request signature as a covered component in the response signature. Since `Signature` is a Dictionary structured field, the `key` parameter selects a specific signature by its label:
+The strongest form of binding is to include both the client's request signature and its signature parameters as covered components in the response signature. Since `Signature` and `Signature-Input` are both Dictionary structured fields, the `key` parameter selects a specific entry by its label:
 
 ```
 Signature-Input: resp=("@status" "content-digest"
-    "signature";req;key="sig1")
+    "signature";req;key="sig1" "signature-input";req;key="sig1")
     ;created=1618884479;keyid="server-key-1"
 ```
 
-This means the response signature covers the raw bytes of the client's `sig1` signature value. If the request had been different (or unsigned), `sig1` would have a different value, and the response signature would not verify.
+This means the response signature covers:
 
-This creates a cryptographic chain: client signs request, server signs response covering the request signature, the client can verify the chain end-to-end.
+- `"signature";req;key="sig1"` -- the raw bytes of the client's `sig1` signature value. If the request had been different (or unsigned), `sig1` would have a different value, and the response signature would not verify.
+- `"signature-input";req;key="sig1"` -- the client's signature parameters (covered components, `created`, `keyid`, etc.). This prevents an attacker from swapping the client's `Signature-Input` while keeping the same signature bytes, which matters for defending against [key substitution attacks (DSKS)](#key-substitution-attacks-dsks-on-signature-chaining). Without this, an attacker who can construct a different key that validates the same signature bytes (possible with ECDSA) could rewrite the `Signature-Input` to claim different covered components or a different `keyid`, and the response signature would still verify. Covering the `Signature-Input` locks down both the signature value and the metadata describing what it covers.
+
+Together, these create a cryptographic chain: client signs request, server signs response covering both the request signature and its parameters, the client can verify the chain end-to-end.
 
 See the [Signing Responses](/docs/guides/signing-responses) guide for implementation examples in all five languages.
 
