@@ -120,6 +120,74 @@ class SecurityTest {
         assertEquals("sig1", result.label)
     }
 
+    @Test
+    fun `expired signature rejected by default`() {
+        val now = Instant.ofEpochSecond(1_700_000_000)
+        val expired = now.minusSeconds(60).epochSecond
+
+        val key = hmacKey()
+        val params = SignatureParameters.builder()
+            .component("@method")
+            .keyId(KEY_ID)
+            .algorithm(Algorithm.HmacSha256)
+            .createdEpoch(now.minusSeconds(120).epochSecond)
+            .expiresEpoch(expired)
+            .build()
+        val result = Signer.sign(simpleMessage(), "sig1", params, key)
+        val signed = RawMessage.request(
+            "POST",
+            URI.create("https://example.com/resource"),
+            mapOf(
+                "content-type" to listOf("application/json"),
+                "signature-input" to listOf(Signer.signatureInputHeader(result)),
+                "signature" to listOf(Signer.signatureHeader(result)),
+            ),
+        )
+
+        assertThrows<HttpSigException> {
+            Verifier.verify(
+                signed,
+                { _, _ -> hmacKey() },
+                Verifier.VerifyOptions(now = Supplier { now }),
+            )
+        }
+    }
+
+    @Test
+    fun `expired signature accepted when rejectExpired is false`() {
+        val now = Instant.ofEpochSecond(1_700_000_000)
+        val expired = now.minusSeconds(60).epochSecond
+
+        val key = hmacKey()
+        val params = SignatureParameters.builder()
+            .component("@method")
+            .keyId(KEY_ID)
+            .algorithm(Algorithm.HmacSha256)
+            .createdEpoch(now.minusSeconds(120).epochSecond)
+            .expiresEpoch(expired)
+            .build()
+        val result = Signer.sign(simpleMessage(), "sig1", params, key)
+        val signed = RawMessage.request(
+            "POST",
+            URI.create("https://example.com/resource"),
+            mapOf(
+                "content-type" to listOf("application/json"),
+                "signature-input" to listOf(Signer.signatureInputHeader(result)),
+                "signature" to listOf(Signer.signatureHeader(result)),
+            ),
+        )
+
+        val verifyResult = Verifier.verify(
+            signed,
+            { _, _ -> hmacKey() },
+            Verifier.VerifyOptions(
+                rejectExpired = false,
+                now = Supplier { now },
+            ),
+        )
+        assertEquals("sig1", verifyResult.label)
+    }
+
     // ----------------------------------------------------------------
     // 2. Algorithm mismatch rejection
     // ----------------------------------------------------------------

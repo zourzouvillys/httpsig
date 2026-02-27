@@ -131,6 +131,56 @@ class SecurityTest {
         assertEquals("sig1", result.label());
     }
 
+    @Test
+    void expiredSignature_rejectedByDefault() throws Exception {
+        Instant now = Instant.ofEpochSecond(1_700_000_000L);
+        Instant expired = now.minusSeconds(60);
+
+        var params = SignatureParameters.builder()
+            .component("@method")
+            .keyId(KEY_ID)
+            .algorithm(Algorithm.HMAC_SHA256)
+            .created(now.minusSeconds(120))
+            .expires(expired)
+            .build();
+
+        var signedRequest = signRequest(params);
+
+        var ex = assertThrows(HttpSigException.class,
+            () -> Verifier.verify(
+                signedRequest,
+                (keyId, alg) -> hmacKey(),
+                new Verifier.VerifyOptions(null, null, null, null, null, () -> now),
+                null
+            ));
+        assertTrue(ex.getMessage().contains("expired"),
+            "expected 'expired' in message but got: " + ex.getMessage());
+    }
+
+    @Test
+    void expiredSignature_acceptedWhenRejectExpiredDisabled() throws Exception {
+        Instant now = Instant.ofEpochSecond(1_700_000_000L);
+        Instant expired = now.minusSeconds(60);
+
+        var params = SignatureParameters.builder()
+            .component("@method")
+            .keyId(KEY_ID)
+            .algorithm(Algorithm.HMAC_SHA256)
+            .created(now.minusSeconds(120))
+            .expires(expired)
+            .build();
+
+        var signedRequest = signRequest(params);
+
+        var result = Verifier.verify(
+            signedRequest,
+            (keyId, alg) -> hmacKey(),
+            new Verifier.VerifyOptions(null, null, null, false, null, () -> now),
+            null
+        );
+        assertEquals("sig1", result.label());
+    }
+
     // -----------------------------------------------------------------------
     // 2. Algorithm mismatch rejection
     // -----------------------------------------------------------------------

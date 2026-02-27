@@ -24,7 +24,7 @@ object Verifier {
         val now: Supplier<Instant> = Supplier { Instant.now() },
     ) {
         companion object {
-            fun defaults(): VerifyOptions = VerifyOptions()
+            fun defaults(): VerifyOptions = VerifyOptions(rejectExpired = true)
         }
     }
 
@@ -155,7 +155,7 @@ object Verifier {
                 throw HttpSigException("signature future-dated")
             }
         }
-        if (options.rejectExpired == true && expires != null) {
+        if (options.rejectExpired != false && expires != null) {
             if (now.isAfter(Instant.ofEpochSecond(expires))) {
                 throw HttpSigException("signature expired")
             }
