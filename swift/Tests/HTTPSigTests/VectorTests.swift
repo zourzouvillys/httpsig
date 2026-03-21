@@ -212,6 +212,8 @@ struct VectorTests {
             let pem = try String(contentsOf: Self.testdataPath.appendingPathComponent(v.keyFile!), encoding: .utf8)
             let der = try PEMUtils.decodePEM(pem)
             return try ECDSAP256SigningKey(keyId: v.keyId, derRepresentation: der)
+        default:
+            fatalError("No test vector key for algorithm \(v.algorithm)")
         }
     }
 
@@ -234,6 +236,8 @@ struct VectorTests {
             let pem = try String(contentsOf: Self.testdataPath.appendingPathComponent(v.pubKeyFile!), encoding: .utf8)
             let der = try PEMUtils.decodePEM(pem)
             return try ECDSAP256VerifyingKey(keyId: v.keyId, derRepresentation: der)
+        default:
+            fatalError("No test vector key for algorithm \(v.algorithm)")
         }
     }
 
