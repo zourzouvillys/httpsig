@@ -22,6 +22,7 @@ object Verifier {
         val rejectExpired: Boolean? = null,
         val requiredLabel: String? = null,
         val now: Supplier<Instant> = Supplier { Instant.now() },
+        val nonceChecker: ((nonce: String, keyId: String, algorithm: Algorithm) -> Unit)? = null,
     ) {
         companion object {
             fun defaults(): VerifyOptions = VerifyOptions(rejectExpired = true)
@@ -38,6 +39,7 @@ object Verifier {
         val components: List<ComponentIdentifier>,
         val created: Long?,
         val expires: Long?,
+        val nonce: String? = null,
     )
 
     /**
@@ -126,6 +128,7 @@ object Verifier {
         val metaParams = innerList.params
         val created = toLong(metaParams["created"])
         val expires = toLong(metaParams["expires"])
+        val nonce = metaParams["nonce"] as? String
         val keyId = metaParams["keyid"] as? String
         val algStr = metaParams["alg"] as? String
         val algorithm = algStr?.let { Algorithm.fromValue(it) }
@@ -182,6 +185,11 @@ object Verifier {
             throw HttpSigException("signature verification failed for label '$label'")
         }
 
+        // nonce verification hook
+        if (options.nonceChecker != null && nonce != null) {
+            options.nonceChecker.invoke(nonce, key.keyId, key.algorithm)
+        }
+
         return VerifyResult(
             label = label,
             keyId = key.keyId,
@@ -189,6 +197,7 @@ object Verifier {
             components = components.toList(),
             created = created,
             expires = expires,
+            nonce = nonce,
         )
     }
 

@@ -20,13 +20,18 @@ public struct VerifyOptions: Sendable {
     /// Clock source for age/expiry checks. Defaults to Date().
     public var now: @Sendable () -> Date
 
+    /// Optional nonce checker called after signature verification succeeds.
+    /// Receives (nonce, keyId, algorithm). Throw to reject the signature.
+    public var nonceChecker: (@Sendable (String, String, Algorithm) throws -> Void)?
+
     public init(
         requiredComponents: [ComponentIdentifier]? = nil,
         maxAge: TimeInterval? = nil,
         maxClockSkew: TimeInterval? = nil,
         rejectExpired: Bool = true,
         requiredLabel: String? = nil,
-        now: @escaping @Sendable () -> Date = { Date() }
+        now: @escaping @Sendable () -> Date = { Date() },
+        nonceChecker: (@Sendable (String, String, Algorithm) throws -> Void)? = nil
     ) {
         self.requiredComponents = requiredComponents
         self.maxAge = maxAge
@@ -34,6 +39,7 @@ public struct VerifyOptions: Sendable {
         self.rejectExpired = rejectExpired
         self.requiredLabel = requiredLabel
         self.now = now
+        self.nonceChecker = nonceChecker
     }
 }
 
@@ -45,6 +51,7 @@ public struct VerifyResult: Sendable {
     public let components: [ComponentIdentifier]
     public let created: Int64?
     public let expires: Int64?
+    public let nonce: String?
 }
 
 /// Verifies HTTP message signatures per RFC 9421.
@@ -163,6 +170,7 @@ public enum Verifier {
 
         let created: Int64? = metaParams.getInt("created")
         let expires: Int64? = metaParams.getInt("expires")
+        let nonce: String? = metaParams.getString("nonce")
         let keyId: String? = metaParams.getString("keyid")
         let algStr: String? = metaParams.getString("alg")
         let algorithm: Algorithm? = algStr.flatMap { Algorithm(rawValue: $0) }
@@ -230,13 +238,19 @@ public enum Verifier {
             )
         }
 
+        // Nonce check (after cryptographic verification succeeds)
+        if let nonceChecker = options.nonceChecker, let nonce {
+            try nonceChecker(nonce, key.keyId, key.algorithm)
+        }
+
         return VerifyResult(
             label: label,
             keyId: key.keyId,
             algorithm: key.algorithm,
             components: components,
             created: created,
-            expires: expires
+            expires: expires,
+            nonce: nonce
         )
     }
 }

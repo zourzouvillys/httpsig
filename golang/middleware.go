@@ -21,7 +21,14 @@ type VerifyMiddleware struct {
 func (m *VerifyMiddleware) Wrap(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		msg := &RequestMessage{Req: r}
-		result, err := VerifyMessage(msg, m.Provider, m.Options, nil)
+		// If options have a NonceChecker but no Context, inject the request context.
+		opts := m.Options
+		if opts != nil && opts.NonceChecker != nil && opts.Context == nil {
+			cp := *opts
+			cp.Context = r.Context()
+			opts = &cp
+		}
+		result, err := VerifyMessage(msg, m.Provider, opts, nil)
 		if err != nil {
 			if m.OnError != nil {
 				m.OnError(w, r, err)

@@ -113,6 +113,7 @@ export interface VerifyResult {
   components: ComponentIdentifier[];
   created?: number;
   expires?: number;
+  nonce?: string;
 }
 
 /** Options for signature verification. */
@@ -124,4 +125,6 @@ export interface VerifyOptions {
   rejectExpired?: boolean;
   requiredLabel?: string;
   now?: () => number;
+  /** Optional callback to validate the nonce. Called after signature verification succeeds. If it throws, verification fails. */
+  nonceChecker?: (nonce: string, keyId: string, algorithm?: Algorithm) => Promise<void> | void;
 }

@@ -1,6 +1,7 @@
 package httpsig
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -31,6 +32,16 @@ type VerifyOptions struct {
 	// RequiredLabel specifies a specific signature label to verify. If empty,
 	// verifies the first signature that has a matching key.
 	RequiredLabel string
+
+	// NonceChecker, if set, is called after cryptographic verification succeeds
+	// for signatures that include a nonce parameter. If it returns an error,
+	// verification fails. This allows callers to enforce nonce uniqueness
+	// (replay protection). If the signature has no nonce, the checker is not called.
+	NonceChecker func(ctx context.Context, nonce string, keyID string, algorithm Algorithm) error
+
+	// Context provides a context for callbacks such as NonceChecker.
+	// If nil, context.Background() is used.
+	Context context.Context
 }
 
 func (o *VerifyOptions) now() time.Time {
@@ -61,6 +72,8 @@ type VerifyResult struct {
 	Created *int64
 	// Expires is the expiration timestamp, if present.
 	Expires *int64
+	// Nonce is the nonce string from the signature parameters, if present.
+	Nonce *string
 }
 
 // VerifyMessage verifies a signature on a message.
@@ -164,6 +177,17 @@ func VerifyMessage(msg Message, provider KeyProvider, opts *VerifyOptions, reqMs
 			continue
 		}
 
+		// Call NonceChecker if configured and a nonce is present
+		if opts != nil && opts.NonceChecker != nil && sigParams.Nonce != nil {
+			ctx := opts.Context
+			if ctx == nil {
+				ctx = context.Background()
+			}
+			if err := opts.NonceChecker(ctx, *sigParams.Nonce, key.KeyID(), key.Algorithm()); err != nil {
+				return nil, fmt.Errorf("%w: %v", ErrInvalidSignature, err)
+			}
+		}
+
 		return &VerifyResult{
 			Label:      label,
 			KeyID:      key.KeyID(),
@@ -171,6 +195,7 @@ func VerifyMessage(msg Message, provider KeyProvider, opts *VerifyOptions, reqMs
 			Components: sigParams.Components,
 			Created:    sigParams.Created,
 			Expires:    sigParams.Expires,
+			Nonce:      sigParams.Nonce,
 		}, nil
 	}
 
