@@ -129,53 +129,113 @@ public struct ECDSAP256VerifyingKey: VerifyingKey {
     }
 }
 
-// MARK: - RSA-PSS-SHA512
+// MARK: - ECDSA P-384
 
-/// RSA-PSS-SHA512 signing key backed by the Security framework.
-public struct RSAPSSSigningKey: SigningKey {
+/// ECDSA P-384 signing key backed by CryptoKit.
+public struct ECDSAP384SigningKey: SigningKey {
     public let keyId: String
-    public let algorithm: Algorithm = .rsaPssSha512
-    private let secKey: SecKey
+    public let algorithm: Algorithm = .ecdsaP384Sha384
+    private let key: P384.Signing.PrivateKey
 
-    public init(keyId: String, secKey: SecKey) {
+    public init(keyId: String, privateKey: P384.Signing.PrivateKey) {
         self.keyId = keyId
-        self.secKey = secKey
+        self.key = privateKey
     }
 
-    /// Load from a PKCS#8 DER-encoded RSA private key.
-    public init(keyId: String, pkcs8DER data: Data) throws {
+    /// Load from a SEC1 (OpenSSL EC) DER-encoded private key.
+    public init(keyId: String, derRepresentation data: Data) throws {
         self.keyId = keyId
-        // Strip the PKCS#8 wrapper to get the raw PKCS#1 key that Security framework expects.
-        let pkcs1 = try Self.extractPKCS1FromPKCS8(data)
-        let attrs: [String: Any] = [
-            kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
-            kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
-        ]
-        var error: Unmanaged<CFError>?
-        guard let key = SecKeyCreateWithData(pkcs1 as CFData, attrs as CFDictionary, &error) else {
-            let desc = error?.takeRetainedValue().localizedDescription ?? "unknown"
-            throw HttpSigError.invalidKey("RSA private key import failed: \(desc)")
-        }
-        self.secKey = key
+        self.key = try P384.Signing.PrivateKey(derRepresentation: data)
     }
 
     public func sign(_ data: Data) throws -> Data {
-        var error: Unmanaged<CFError>?
-        guard let sig = SecKeyCreateSignature(
-            secKey,
-            .rsaSignatureMessagePSSSHA512,
-            data as CFData,
-            &error
-        ) else {
-            let desc = error?.takeRetainedValue().localizedDescription ?? "unknown"
-            throw HttpSigError.invalidKey("RSA-PSS sign failed: \(desc)")
-        }
-        return sig as Data
+        // RFC 9421 requires raw r||s format (96 bytes for P-384).
+        let sig = try key.signature(for: SHA384.hash(data: data))
+        return sig.rawRepresentation
+    }
+}
+
+/// ECDSA P-384 verifying key backed by CryptoKit.
+public struct ECDSAP384VerifyingKey: VerifyingKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .ecdsaP384Sha384
+    private let key: P384.Signing.PublicKey
+
+    public init(keyId: String, publicKey: P384.Signing.PublicKey) {
+        self.keyId = keyId
+        self.key = publicKey
     }
 
+    /// Load from an SPKI DER-encoded public key.
+    public init(keyId: String, derRepresentation data: Data) throws {
+        self.keyId = keyId
+        self.key = try P384.Signing.PublicKey(derRepresentation: data)
+    }
+
+    public func verify(_ data: Data, signature: Data) throws -> Bool {
+        guard signature.count == 96 else { return false }
+        let ecSig = try P384.Signing.ECDSASignature(rawRepresentation: signature)
+        return key.isValidSignature(ecSig, for: SHA384.hash(data: data))
+    }
+}
+
+// MARK: - ECDSA P-521
+
+/// ECDSA P-521 signing key backed by CryptoKit.
+public struct ECDSAP521SigningKey: SigningKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .ecdsaP521Sha512
+    private let key: P521.Signing.PrivateKey
+
+    public init(keyId: String, privateKey: P521.Signing.PrivateKey) {
+        self.keyId = keyId
+        self.key = privateKey
+    }
+
+    /// Load from a SEC1 (OpenSSL EC) DER-encoded private key.
+    public init(keyId: String, derRepresentation data: Data) throws {
+        self.keyId = keyId
+        self.key = try P521.Signing.PrivateKey(derRepresentation: data)
+    }
+
+    public func sign(_ data: Data) throws -> Data {
+        // RFC 9421 requires raw r||s format (132 bytes for P-521).
+        let sig = try key.signature(for: SHA512.hash(data: data))
+        return sig.rawRepresentation
+    }
+}
+
+/// ECDSA P-521 verifying key backed by CryptoKit.
+public struct ECDSAP521VerifyingKey: VerifyingKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .ecdsaP521Sha512
+    private let key: P521.Signing.PublicKey
+
+    public init(keyId: String, publicKey: P521.Signing.PublicKey) {
+        self.keyId = keyId
+        self.key = publicKey
+    }
+
+    /// Load from an SPKI DER-encoded public key.
+    public init(keyId: String, derRepresentation data: Data) throws {
+        self.keyId = keyId
+        self.key = try P521.Signing.PublicKey(derRepresentation: data)
+    }
+
+    public func verify(_ data: Data, signature: Data) throws -> Bool {
+        guard signature.count == 132 else { return false }
+        let ecSig = try P521.Signing.ECDSASignature(rawRepresentation: signature)
+        return key.isValidSignature(ecSig, for: SHA512.hash(data: data))
+    }
+}
+
+// MARK: - RSA Helpers
+
+/// Shared utilities for RSA key types backed by the Security framework.
+enum RSAKeyUtils {
     /// Parse PKCS#8 to extract the inner PKCS#1 RSAPrivateKey.
     /// PKCS#8 wraps it in: SEQUENCE { version, AlgorithmIdentifier, OCTET STRING { pkcs1 } }
-    private static func extractPKCS1FromPKCS8(_ data: Data) throws -> Data {
+    static func extractPKCS1FromPKCS8(_ data: Data) throws -> Data {
         // Simple ASN.1 DER parser, just enough to unwrap PKCS#8.
         var offset = 0
         let bytes = Array(data)
@@ -240,6 +300,69 @@ public struct RSAPSSSigningKey: SigningKey {
         }
         return Data(bytes[offset..<(offset + octetLen)])
     }
+
+    /// Import an RSA private key from PKCS#8 DER data via the Security framework.
+    static func importPrivateKey(pkcs8DER data: Data) throws -> SecKey {
+        let pkcs1 = try extractPKCS1FromPKCS8(data)
+        let attrs: [String: Any] = [
+            kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+            kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
+        ]
+        var error: Unmanaged<CFError>?
+        guard let key = SecKeyCreateWithData(pkcs1 as CFData, attrs as CFDictionary, &error) else {
+            let desc = error?.takeRetainedValue().localizedDescription ?? "unknown"
+            throw HttpSigError.invalidKey("RSA private key import failed: \(desc)")
+        }
+        return key
+    }
+
+    /// Import an RSA public key from SPKI DER data via the Security framework.
+    static func importPublicKey(spkiDER data: Data) throws -> SecKey {
+        let attrs: [String: Any] = [
+            kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+            kSecAttrKeyClass as String: kSecAttrKeyClassPublic,
+        ]
+        var error: Unmanaged<CFError>?
+        guard let key = SecKeyCreateWithData(data as CFData, attrs as CFDictionary, &error) else {
+            let desc = error?.takeRetainedValue().localizedDescription ?? "unknown"
+            throw HttpSigError.invalidKey("RSA public key import failed: \(desc)")
+        }
+        return key
+    }
+}
+
+// MARK: - RSA-PSS-SHA512
+
+/// RSA-PSS-SHA512 signing key backed by the Security framework.
+public struct RSAPSSSigningKey: SigningKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .rsaPssSha512
+    private let secKey: SecKey
+
+    public init(keyId: String, secKey: SecKey) {
+        self.keyId = keyId
+        self.secKey = secKey
+    }
+
+    /// Load from a PKCS#8 DER-encoded RSA private key.
+    public init(keyId: String, pkcs8DER data: Data) throws {
+        self.keyId = keyId
+        self.secKey = try RSAKeyUtils.importPrivateKey(pkcs8DER: data)
+    }
+
+    public func sign(_ data: Data) throws -> Data {
+        var error: Unmanaged<CFError>?
+        guard let sig = SecKeyCreateSignature(
+            secKey,
+            .rsaSignatureMessagePSSSHA512,
+            data as CFData,
+            &error
+        ) else {
+            let desc = error?.takeRetainedValue().localizedDescription ?? "unknown"
+            throw HttpSigError.invalidKey("RSA-PSS-SHA512 sign failed: \(desc)")
+        }
+        return sig as Data
+    }
 }
 
 /// RSA-PSS-SHA512 verifying key backed by the Security framework.
@@ -256,16 +379,7 @@ public struct RSAPSSVerifyingKey: VerifyingKey {
     /// Load from an SPKI DER-encoded RSA public key.
     public init(keyId: String, spkiDER data: Data) throws {
         self.keyId = keyId
-        let attrs: [String: Any] = [
-            kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
-            kSecAttrKeyClass as String: kSecAttrKeyClassPublic,
-        ]
-        var error: Unmanaged<CFError>?
-        guard let key = SecKeyCreateWithData(data as CFData, attrs as CFDictionary, &error) else {
-            let desc = error?.takeRetainedValue().localizedDescription ?? "unknown"
-            throw HttpSigError.invalidKey("RSA public key import failed: \(desc)")
-        }
-        self.secKey = key
+        self.secKey = try RSAKeyUtils.importPublicKey(spkiDER: data)
     }
 
     public func verify(_ data: Data, signature: Data) throws -> Bool {
@@ -277,7 +391,198 @@ public struct RSAPSSVerifyingKey: VerifyingKey {
             signature as CFData,
             &error
         )
-        // Verification failure is not an error, it just returns false
+        return result
+    }
+}
+
+// MARK: - RSA-PSS-SHA384
+
+/// RSA-PSS-SHA384 signing key backed by the Security framework.
+public struct RSAPSSSHA384SigningKey: SigningKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .rsaPssSha384
+    private let secKey: SecKey
+
+    public init(keyId: String, secKey: SecKey) {
+        self.keyId = keyId
+        self.secKey = secKey
+    }
+
+    /// Load from a PKCS#8 DER-encoded RSA private key.
+    public init(keyId: String, pkcs8DER data: Data) throws {
+        self.keyId = keyId
+        self.secKey = try RSAKeyUtils.importPrivateKey(pkcs8DER: data)
+    }
+
+    public func sign(_ data: Data) throws -> Data {
+        var error: Unmanaged<CFError>?
+        guard let sig = SecKeyCreateSignature(
+            secKey,
+            .rsaSignatureMessagePSSSHA384,
+            data as CFData,
+            &error
+        ) else {
+            let desc = error?.takeRetainedValue().localizedDescription ?? "unknown"
+            throw HttpSigError.invalidKey("RSA-PSS-SHA384 sign failed: \(desc)")
+        }
+        return sig as Data
+    }
+}
+
+/// RSA-PSS-SHA384 verifying key backed by the Security framework.
+public struct RSAPSSSHA384VerifyingKey: VerifyingKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .rsaPssSha384
+    private let secKey: SecKey
+
+    public init(keyId: String, secKey: SecKey) {
+        self.keyId = keyId
+        self.secKey = secKey
+    }
+
+    /// Load from an SPKI DER-encoded RSA public key.
+    public init(keyId: String, spkiDER data: Data) throws {
+        self.keyId = keyId
+        self.secKey = try RSAKeyUtils.importPublicKey(spkiDER: data)
+    }
+
+    public func verify(_ data: Data, signature: Data) throws -> Bool {
+        var error: Unmanaged<CFError>?
+        let result = SecKeyVerifySignature(
+            secKey,
+            .rsaSignatureMessagePSSSHA384,
+            data as CFData,
+            signature as CFData,
+            &error
+        )
+        return result
+    }
+}
+
+// MARK: - RSA-PSS-SHA256
+
+/// RSA-PSS-SHA256 signing key backed by the Security framework.
+public struct RSAPSSSHA256SigningKey: SigningKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .rsaPssSha256
+    private let secKey: SecKey
+
+    public init(keyId: String, secKey: SecKey) {
+        self.keyId = keyId
+        self.secKey = secKey
+    }
+
+    /// Load from a PKCS#8 DER-encoded RSA private key.
+    public init(keyId: String, pkcs8DER data: Data) throws {
+        self.keyId = keyId
+        self.secKey = try RSAKeyUtils.importPrivateKey(pkcs8DER: data)
+    }
+
+    public func sign(_ data: Data) throws -> Data {
+        var error: Unmanaged<CFError>?
+        guard let sig = SecKeyCreateSignature(
+            secKey,
+            .rsaSignatureMessagePSSSHA256,
+            data as CFData,
+            &error
+        ) else {
+            let desc = error?.takeRetainedValue().localizedDescription ?? "unknown"
+            throw HttpSigError.invalidKey("RSA-PSS-SHA256 sign failed: \(desc)")
+        }
+        return sig as Data
+    }
+}
+
+/// RSA-PSS-SHA256 verifying key backed by the Security framework.
+public struct RSAPSSSHA256VerifyingKey: VerifyingKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .rsaPssSha256
+    private let secKey: SecKey
+
+    public init(keyId: String, secKey: SecKey) {
+        self.keyId = keyId
+        self.secKey = secKey
+    }
+
+    /// Load from an SPKI DER-encoded RSA public key.
+    public init(keyId: String, spkiDER data: Data) throws {
+        self.keyId = keyId
+        self.secKey = try RSAKeyUtils.importPublicKey(spkiDER: data)
+    }
+
+    public func verify(_ data: Data, signature: Data) throws -> Bool {
+        var error: Unmanaged<CFError>?
+        let result = SecKeyVerifySignature(
+            secKey,
+            .rsaSignatureMessagePSSSHA256,
+            data as CFData,
+            signature as CFData,
+            &error
+        )
+        return result
+    }
+}
+
+// MARK: - RSA PKCS1v1.5 SHA-256
+
+/// RSA PKCS1v1.5 SHA-256 signing key backed by the Security framework.
+public struct RSAV1_5SHA256SigningKey: SigningKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .rsaV1_5Sha256
+    private let secKey: SecKey
+
+    public init(keyId: String, secKey: SecKey) {
+        self.keyId = keyId
+        self.secKey = secKey
+    }
+
+    /// Load from a PKCS#8 DER-encoded RSA private key.
+    public init(keyId: String, pkcs8DER data: Data) throws {
+        self.keyId = keyId
+        self.secKey = try RSAKeyUtils.importPrivateKey(pkcs8DER: data)
+    }
+
+    public func sign(_ data: Data) throws -> Data {
+        var error: Unmanaged<CFError>?
+        guard let sig = SecKeyCreateSignature(
+            secKey,
+            .rsaSignatureMessagePKCS1v15SHA256,
+            data as CFData,
+            &error
+        ) else {
+            let desc = error?.takeRetainedValue().localizedDescription ?? "unknown"
+            throw HttpSigError.invalidKey("RSA-v1_5-SHA256 sign failed: \(desc)")
+        }
+        return sig as Data
+    }
+}
+
+/// RSA PKCS1v1.5 SHA-256 verifying key backed by the Security framework.
+public struct RSAV1_5SHA256VerifyingKey: VerifyingKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .rsaV1_5Sha256
+    private let secKey: SecKey
+
+    public init(keyId: String, secKey: SecKey) {
+        self.keyId = keyId
+        self.secKey = secKey
+    }
+
+    /// Load from an SPKI DER-encoded RSA public key.
+    public init(keyId: String, spkiDER data: Data) throws {
+        self.keyId = keyId
+        self.secKey = try RSAKeyUtils.importPublicKey(spkiDER: data)
+    }
+
+    public func verify(_ data: Data, signature: Data) throws -> Bool {
+        var error: Unmanaged<CFError>?
+        let result = SecKeyVerifySignature(
+            secKey,
+            .rsaSignatureMessagePKCS1v15SHA256,
+            data as CFData,
+            signature as CFData,
+            &error
+        )
         return result
     }
 }
@@ -302,6 +607,52 @@ public struct HMACSHA256Key: SigningKey, VerifyingKey {
 
     public func verify(_ data: Data, signature: Data) throws -> Bool {
         CryptoKit.HMAC<SHA256>.isValidAuthenticationCode(signature, authenticating: data, using: secret)
+    }
+}
+
+// MARK: - HMAC-SHA384
+
+/// HMAC-SHA384 symmetric key. Implements both SigningKey and VerifyingKey.
+public struct HMACSHA384Key: SigningKey, VerifyingKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .hmacSha384
+    private let secret: SymmetricKey
+
+    public init(keyId: String, secret: Data) {
+        self.keyId = keyId
+        self.secret = SymmetricKey(data: secret)
+    }
+
+    public func sign(_ data: Data) throws -> Data {
+        let mac = CryptoKit.HMAC<SHA384>.authenticationCode(for: data, using: secret)
+        return Data(mac)
+    }
+
+    public func verify(_ data: Data, signature: Data) throws -> Bool {
+        CryptoKit.HMAC<SHA384>.isValidAuthenticationCode(signature, authenticating: data, using: secret)
+    }
+}
+
+// MARK: - HMAC-SHA512
+
+/// HMAC-SHA512 symmetric key. Implements both SigningKey and VerifyingKey.
+public struct HMACSHA512Key: SigningKey, VerifyingKey {
+    public let keyId: String
+    public let algorithm: Algorithm = .hmacSha512
+    private let secret: SymmetricKey
+
+    public init(keyId: String, secret: Data) {
+        self.keyId = keyId
+        self.secret = SymmetricKey(data: secret)
+    }
+
+    public func sign(_ data: Data) throws -> Data {
+        let mac = CryptoKit.HMAC<SHA512>.authenticationCode(for: data, using: secret)
+        return Data(mac)
+    }
+
+    public func verify(_ data: Data, signature: Data) throws -> Bool {
+        CryptoKit.HMAC<SHA512>.isValidAuthenticationCode(signature, authenticating: data, using: secret)
     }
 }
 

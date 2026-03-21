@@ -65,7 +65,7 @@ This means the response signature covers:
 
 Together, these create a cryptographic chain: client signs request, server signs response covering both the request signature and its parameters, the client can verify the chain end-to-end.
 
-See the [Signing Responses](/docs/guides/signing-responses) guide for implementation examples in all five languages.
+See the [Signing Responses](/guides/signing-responses) guide for implementation examples in all five languages.
 
 ### When the Client Does Not Sign Requests
 
@@ -163,7 +163,7 @@ For end-to-end signature chaining to work:
 
 If a proxy strips signatures, the chain is broken. The server binds to the proxy's signature, and the client has no way to verify a chain back to its own request. This may be acceptable in architectures where the proxy is an explicit trust boundary (analogous to TLS termination), but it must be a deliberate architectural decision, not an accident.
 
-See the [Proxy Forwarding](/docs/guides/proxy-forwarding) guide for implementation details.
+See the [Proxy Forwarding](/guides/proxy-forwarding) guide for implementation details.
 
 ### Practical Considerations
 
@@ -171,7 +171,7 @@ In practice, many HTTP intermediaries (CDNs, load balancers, API gateways) do no
 
 - Test that signatures survive transit through every hop.
 - Consider using the `bs` (binary sequence) parameter for fields whose values might be normalized.
-- Use [Content-Digest](/docs/concepts/content-digest) (RFC 9530) to protect body integrity rather than covering the body directly, since intermediaries may re-encode transfer encodings.
+- Use [Content-Digest](/concepts/content-digest) (RFC 9530) to protect body integrity rather than covering the body directly, since intermediaries may re-encode transfer encodings.
 - Document which intermediaries are trust boundaries and which must be transparent to signatures.
 
 ## High-Throughput Signing with KMS-Backed Keys
@@ -240,7 +240,7 @@ For HTTP message signatures with the envelope pattern:
 
 **Recommendation:** ECDSA P-256 (`ecdsa-p256-sha256` in RFC 9421) unless you have a specific reason to choose otherwise. It has universal KMS support, compact signatures, and sufficient throughput for any practical HTTP signing workload.
 
-See [Algorithms](/docs/concepts/algorithms) for algorithm details and [Key Management](/docs/concepts/key-management) for the key interfaces and platform-specific integration (HSM, Secure Enclave, Android Keystore, Web Crypto).
+See [Algorithms](/concepts/algorithms) for algorithm details and [Key Management](/concepts/key-management) for the key interfaces and platform-specific integration (HSM, Secure Enclave, Android Keystore, Web Crypto).
 
 ## Implementation Checklist
 
@@ -251,7 +251,7 @@ For implementors of applications using this library, the following behaviors sho
 - Support the `req` parameter on component identifiers to include request components in response signatures.
 - Support covering `"signature";req;key="<label>"` to chain to a specific request signature.
 - Include `created` and optionally `expires` in signature parameters.
-- Use [Content-Digest](/docs/concepts/content-digest) (RFC 9530) for body integrity rather than directly signing body content.
+- Use [Content-Digest](/concepts/content-digest) (RFC 9530) for body integrity rather than directly signing body content.
 
 ### Verifying Responses (Client Side)
 

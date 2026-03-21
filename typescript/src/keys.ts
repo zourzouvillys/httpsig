@@ -44,6 +44,54 @@ export function newRSAPSSVerifyingKey(
   return new AsymmetricVerifyingKey(keyId, "rsa-pss-sha512", key);
 }
 
+/** Create a SigningKey for rsa-pss-sha256. */
+export function newRSAPSSSHA256SigningKey(
+  keyId: string,
+  key: crypto.KeyObject,
+): SigningKey {
+  return new AsymmetricSigningKey(keyId, "rsa-pss-sha256", key);
+}
+
+/** Create a VerifyingKey for rsa-pss-sha256. */
+export function newRSAPSSSHA256VerifyingKey(
+  keyId: string,
+  key: crypto.KeyObject,
+): VerifyingKey {
+  return new AsymmetricVerifyingKey(keyId, "rsa-pss-sha256", key);
+}
+
+/** Create a SigningKey for rsa-pss-sha384. */
+export function newRSAPSSSHA384SigningKey(
+  keyId: string,
+  key: crypto.KeyObject,
+): SigningKey {
+  return new AsymmetricSigningKey(keyId, "rsa-pss-sha384", key);
+}
+
+/** Create a VerifyingKey for rsa-pss-sha384. */
+export function newRSAPSSSHA384VerifyingKey(
+  keyId: string,
+  key: crypto.KeyObject,
+): VerifyingKey {
+  return new AsymmetricVerifyingKey(keyId, "rsa-pss-sha384", key);
+}
+
+/** Create a SigningKey for rsa-v1_5-sha256. */
+export function newRSAv15SigningKey(
+  keyId: string,
+  key: crypto.KeyObject,
+): SigningKey {
+  return new AsymmetricSigningKey(keyId, "rsa-v1_5-sha256", key);
+}
+
+/** Create a VerifyingKey for rsa-v1_5-sha256. */
+export function newRSAv15VerifyingKey(
+  keyId: string,
+  key: crypto.KeyObject,
+): VerifyingKey {
+  return new AsymmetricVerifyingKey(keyId, "rsa-v1_5-sha256", key);
+}
+
 /** Create a SigningKey for ecdsa-p256-sha256. */
 export function newECDSAP256SigningKey(
   keyId: string,
@@ -58,6 +106,38 @@ export function newECDSAP256VerifyingKey(
   key: crypto.KeyObject,
 ): VerifyingKey {
   return new AsymmetricVerifyingKey(keyId, "ecdsa-p256-sha256", key);
+}
+
+/** Create a SigningKey for ecdsa-p384-sha384. */
+export function newECDSAP384SigningKey(
+  keyId: string,
+  key: crypto.KeyObject,
+): SigningKey {
+  return new AsymmetricSigningKey(keyId, "ecdsa-p384-sha384", key);
+}
+
+/** Create a VerifyingKey for ecdsa-p384-sha384. */
+export function newECDSAP384VerifyingKey(
+  keyId: string,
+  key: crypto.KeyObject,
+): VerifyingKey {
+  return new AsymmetricVerifyingKey(keyId, "ecdsa-p384-sha384", key);
+}
+
+/** Create a SigningKey for ecdsa-p521-sha512. */
+export function newECDSAP521SigningKey(
+  keyId: string,
+  key: crypto.KeyObject,
+): SigningKey {
+  return new AsymmetricSigningKey(keyId, "ecdsa-p521-sha512", key);
+}
+
+/** Create a VerifyingKey for ecdsa-p521-sha512. */
+export function newECDSAP521VerifyingKey(
+  keyId: string,
+  key: crypto.KeyObject,
+): VerifyingKey {
+  return new AsymmetricVerifyingKey(keyId, "ecdsa-p521-sha512", key);
 }
 
 /** Create a SigningKey for ed25519. */
@@ -78,20 +158,20 @@ export function newEd25519VerifyingKey(
 
 // --- HMAC ---
 
-class HMACSHA256Key implements SigningKey, VerifyingKey {
-  public readonly algorithm: Algorithm = "hmac-sha256";
-
+class HMACKey implements SigningKey, VerifyingKey {
   constructor(
     public readonly keyId: string,
+    public readonly algorithm: Algorithm,
     private readonly secret: Uint8Array,
+    private readonly hash: "sha256" | "sha384" | "sha512",
   ) {}
 
   async sign(data: Uint8Array): Promise<Uint8Array> {
-    return signHMAC(this.secret, data);
+    return signHMAC(this.secret, data, this.hash);
   }
 
   async verify(data: Uint8Array, signature: Uint8Array): Promise<boolean> {
-    return verifyHMAC(this.secret, data, signature);
+    return verifyHMAC(this.secret, data, signature, this.hash);
   }
 }
 
@@ -100,7 +180,23 @@ export function newHMACSHA256Key(
   keyId: string,
   secret: Uint8Array,
 ): SigningKey & VerifyingKey {
-  return new HMACSHA256Key(keyId, new Uint8Array(secret));
+  return new HMACKey(keyId, "hmac-sha256", new Uint8Array(secret), "sha256");
+}
+
+/** Create a key that implements both SigningKey and VerifyingKey for hmac-sha384. */
+export function newHMACSHA384Key(
+  keyId: string,
+  secret: Uint8Array,
+): SigningKey & VerifyingKey {
+  return new HMACKey(keyId, "hmac-sha384", new Uint8Array(secret), "sha384");
+}
+
+/** Create a key that implements both SigningKey and VerifyingKey for hmac-sha512. */
+export function newHMACSHA512Key(
+  keyId: string,
+  secret: Uint8Array,
+): SigningKey & VerifyingKey {
+  return new HMACKey(keyId, "hmac-sha512", new Uint8Array(secret), "sha512");
 }
 
 // --- Auto-detection ---
@@ -115,10 +211,17 @@ function detectAlgorithm(key: crypto.KeyObject): Algorithm {
       return "rsa-pss-sha512";
     case "ec": {
       const details = key.asymmetricKeyDetails;
-      if (details?.namedCurve !== "prime256v1" && details?.namedCurve !== "P-256") {
-        throw new Error(`unsupported EC curve: ${details?.namedCurve}`);
+      const curve = details?.namedCurve;
+      if (curve === "prime256v1" || curve === "P-256") {
+        return "ecdsa-p256-sha256";
       }
-      return "ecdsa-p256-sha256";
+      if (curve === "secp384r1" || curve === "P-384") {
+        return "ecdsa-p384-sha384";
+      }
+      if (curve === "secp521r1" || curve === "P-521") {
+        return "ecdsa-p521-sha512";
+      }
+      throw new Error(`unsupported EC curve: ${curve}`);
     }
     case "ed25519":
       return "ed25519";
@@ -151,10 +254,32 @@ export function newKeyPair(keyId: string, privateKey: crypto.KeyObject): KeyPair
 
 /** Create a KeyPair for HMAC-SHA256 where the same secret backs both sides. */
 export function newHMACKeyPair(keyId: string, secret: Uint8Array): KeyPair {
-  const key = new HMACSHA256Key(keyId, new Uint8Array(secret));
+  const key = new HMACKey(keyId, "hmac-sha256", new Uint8Array(secret), "sha256");
   return {
     keyId,
     algorithm: "hmac-sha256",
+    signingKey: key,
+    verifyingKey: key,
+  };
+}
+
+/** Create a KeyPair for HMAC-SHA384 where the same secret backs both sides. */
+export function newHMACSHA384KeyPair(keyId: string, secret: Uint8Array): KeyPair {
+  const key = new HMACKey(keyId, "hmac-sha384", new Uint8Array(secret), "sha384");
+  return {
+    keyId,
+    algorithm: "hmac-sha384",
+    signingKey: key,
+    verifyingKey: key,
+  };
+}
+
+/** Create a KeyPair for HMAC-SHA512 where the same secret backs both sides. */
+export function newHMACSHA512KeyPair(keyId: string, secret: Uint8Array): KeyPair {
+  const key = new HMACKey(keyId, "hmac-sha512", new Uint8Array(secret), "sha512");
+  return {
+    keyId,
+    algorithm: "hmac-sha512",
     signingKey: key,
     verifyingKey: key,
   };
@@ -166,13 +291,25 @@ function webCryptoParams(
   algorithm: Algorithm,
 ): crypto.webcrypto.AlgorithmIdentifier | crypto.webcrypto.RsaPssParams | crypto.webcrypto.EcdsaParams {
   switch (algorithm) {
+    case "rsa-pss-sha256":
+      return { name: "RSA-PSS", saltLength: 32 } satisfies crypto.webcrypto.RsaPssParams;
+    case "rsa-pss-sha384":
+      return { name: "RSA-PSS", saltLength: 48 } satisfies crypto.webcrypto.RsaPssParams;
     case "rsa-pss-sha512":
       return { name: "RSA-PSS", saltLength: 64 } satisfies crypto.webcrypto.RsaPssParams;
+    case "rsa-v1_5-sha256":
+      return { name: "RSASSA-PKCS1-v1_5" };
     case "ecdsa-p256-sha256":
       return { name: "ECDSA", hash: "SHA-256" } satisfies crypto.webcrypto.EcdsaParams;
+    case "ecdsa-p384-sha384":
+      return { name: "ECDSA", hash: "SHA-384" } satisfies crypto.webcrypto.EcdsaParams;
+    case "ecdsa-p521-sha512":
+      return { name: "ECDSA", hash: "SHA-512" } satisfies crypto.webcrypto.EcdsaParams;
     case "ed25519":
       return { name: "Ed25519" };
     case "hmac-sha256":
+    case "hmac-sha384":
+    case "hmac-sha512":
       return { name: "HMAC" };
     default:
       throw new Error(`unsupported Web Crypto algorithm: ${algorithm}`);

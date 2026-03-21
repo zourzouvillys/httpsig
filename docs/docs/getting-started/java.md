@@ -141,4 +141,4 @@ var client = WebClient.builder()
     .build();
 ```
 
-See the [Integrations Guide](/docs/guides/integrations) for more details.
+See the [Integrations Guide](/guides/integrations) for more details.

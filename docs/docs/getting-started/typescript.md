@@ -119,7 +119,7 @@ const signedRequest = createSigningRequest(request, { key: myKey });
 const { statusCode, body } = await signedRequest('https://example.com/api');
 ```
 
-See the [Integrations Guide](/docs/guides/integrations) for more details.
+See the [Integrations Guide](/guides/integrations) for more details.
 
 ## Web Crypto API
 

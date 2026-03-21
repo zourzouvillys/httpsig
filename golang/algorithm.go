@@ -12,6 +12,7 @@ import (
 	"crypto/sha512"
 	"errors"
 	"fmt"
+	"hash"
 	"math/big"
 )
 
@@ -20,18 +21,35 @@ type Algorithm string
 
 const (
 	AlgorithmRSAPSSSHA512    Algorithm = "rsa-pss-sha512"
+	AlgorithmRSAPSSSHA384    Algorithm = "rsa-pss-sha384"
+	AlgorithmRSAPSSSHA256    Algorithm = "rsa-pss-sha256"
+	AlgorithmRSAV15SHA256    Algorithm = "rsa-v1_5-sha256"
 	AlgorithmECDSAP256SHA256 Algorithm = "ecdsa-p256-sha256"
+	AlgorithmECDSAP384SHA384 Algorithm = "ecdsa-p384-sha384"
+	AlgorithmECDSAP521SHA512 Algorithm = "ecdsa-p521-sha512"
 	AlgorithmEd25519         Algorithm = "ed25519"
 	AlgorithmHMACSHA256      Algorithm = "hmac-sha256"
+	AlgorithmHMACSHA384      Algorithm = "hmac-sha384"
+	AlgorithmHMACSHA512      Algorithm = "hmac-sha512"
 )
 
 // algorithmSigner dispatches signing to the right algorithm.
 func algorithmSign(alg Algorithm, key crypto.Signer, data []byte) ([]byte, error) {
 	switch alg {
 	case AlgorithmRSAPSSSHA512:
-		return signRSAPSS(key, data)
+		return signRSAPSS(key, crypto.SHA512, 64, data)
+	case AlgorithmRSAPSSSHA384:
+		return signRSAPSS(key, crypto.SHA384, 48, data)
+	case AlgorithmRSAPSSSHA256:
+		return signRSAPSS(key, crypto.SHA256, 32, data)
+	case AlgorithmRSAV15SHA256:
+		return signRSAV15(key, crypto.SHA256, data)
 	case AlgorithmECDSAP256SHA256:
-		return signECDSAP256(key, data)
+		return signECDSA(key, elliptic.P256(), crypto.SHA256, 32, data)
+	case AlgorithmECDSAP384SHA384:
+		return signECDSA(key, elliptic.P384(), crypto.SHA384, 48, data)
+	case AlgorithmECDSAP521SHA512:
+		return signECDSA(key, elliptic.P521(), crypto.SHA512, 66, data)
 	case AlgorithmEd25519:
 		return signEd25519(key, data)
 	default:
@@ -42,9 +60,19 @@ func algorithmSign(alg Algorithm, key crypto.Signer, data []byte) ([]byte, error
 func algorithmVerify(alg Algorithm, pub crypto.PublicKey, data, sig []byte) (bool, error) {
 	switch alg {
 	case AlgorithmRSAPSSSHA512:
-		return verifyRSAPSS(pub, data, sig)
+		return verifyRSAPSS(pub, crypto.SHA512, 64, data, sig)
+	case AlgorithmRSAPSSSHA384:
+		return verifyRSAPSS(pub, crypto.SHA384, 48, data, sig)
+	case AlgorithmRSAPSSSHA256:
+		return verifyRSAPSS(pub, crypto.SHA256, 32, data, sig)
+	case AlgorithmRSAV15SHA256:
+		return verifyRSAV15(pub, crypto.SHA256, data, sig)
 	case AlgorithmECDSAP256SHA256:
-		return verifyECDSAP256(pub, data, sig)
+		return verifyECDSA(pub, elliptic.P256(), crypto.SHA256, 32, data, sig)
+	case AlgorithmECDSAP384SHA384:
+		return verifyECDSA(pub, elliptic.P384(), crypto.SHA384, 48, data, sig)
+	case AlgorithmECDSAP521SHA512:
+		return verifyECDSA(pub, elliptic.P521(), crypto.SHA512, 66, data, sig)
 	case AlgorithmEd25519:
 		return verifyEd25519(pub, data, sig)
 	default:
@@ -52,29 +80,33 @@ func algorithmVerify(alg Algorithm, pub crypto.PublicKey, data, sig []byte) (boo
 	}
 }
 
-// --- RSA-PSS-SHA512 ---
+// --- RSA-PSS ---
 
-func signRSAPSS(key crypto.Signer, data []byte) ([]byte, error) {
+func signRSAPSS(key crypto.Signer, hash crypto.Hash, saltLen int, data []byte) ([]byte, error) {
 	rsaKey, ok := key.(*rsa.PrivateKey)
 	if !ok {
 		return nil, fmt.Errorf("%w: expected *rsa.PrivateKey", ErrInvalidKey)
 	}
-	h := sha512.Sum512(data)
-	return rsa.SignPSS(rand.Reader, rsaKey, crypto.SHA512, h[:], &rsa.PSSOptions{
-		SaltLength: 64,
-		Hash:       crypto.SHA512,
+	h := hash.New()
+	h.Write(data)
+	digest := h.Sum(nil)
+	return rsa.SignPSS(rand.Reader, rsaKey, hash, digest, &rsa.PSSOptions{
+		SaltLength: saltLen,
+		Hash:       hash,
 	})
 }
 
-func verifyRSAPSS(pub crypto.PublicKey, data, sig []byte) (bool, error) {
+func verifyRSAPSS(pub crypto.PublicKey, hash crypto.Hash, saltLen int, data, sig []byte) (bool, error) {
 	rsaPub, ok := pub.(*rsa.PublicKey)
 	if !ok {
 		return false, fmt.Errorf("%w: expected *rsa.PublicKey", ErrInvalidKey)
 	}
-	h := sha512.Sum512(data)
-	err := rsa.VerifyPSS(rsaPub, crypto.SHA512, h[:], sig, &rsa.PSSOptions{
-		SaltLength: 64,
-		Hash:       crypto.SHA512,
+	h := hash.New()
+	h.Write(data)
+	digest := h.Sum(nil)
+	err := rsa.VerifyPSS(rsaPub, hash, digest, sig, &rsa.PSSOptions{
+		SaltLength: saltLen,
+		Hash:       hash,
 	})
 	if err != nil {
 		return false, nil
@@ -82,45 +114,79 @@ func verifyRSAPSS(pub crypto.PublicKey, data, sig []byte) (bool, error) {
 	return true, nil
 }
 
-// --- ECDSA-P256-SHA256 ---
+// --- RSA PKCS1v1.5 ---
 
-func signECDSAP256(key crypto.Signer, data []byte) ([]byte, error) {
+func signRSAV15(key crypto.Signer, hash crypto.Hash, data []byte) ([]byte, error) {
+	rsaKey, ok := key.(*rsa.PrivateKey)
+	if !ok {
+		return nil, fmt.Errorf("%w: expected *rsa.PrivateKey", ErrInvalidKey)
+	}
+	h := hash.New()
+	h.Write(data)
+	digest := h.Sum(nil)
+	return rsa.SignPKCS1v15(rand.Reader, rsaKey, hash, digest)
+}
+
+func verifyRSAV15(pub crypto.PublicKey, hash crypto.Hash, data, sig []byte) (bool, error) {
+	rsaPub, ok := pub.(*rsa.PublicKey)
+	if !ok {
+		return false, fmt.Errorf("%w: expected *rsa.PublicKey", ErrInvalidKey)
+	}
+	h := hash.New()
+	h.Write(data)
+	digest := h.Sum(nil)
+	err := rsa.VerifyPKCS1v15(rsaPub, hash, digest, sig)
+	if err != nil {
+		return false, nil
+	}
+	return true, nil
+}
+
+// --- ECDSA ---
+
+func signECDSA(key crypto.Signer, curve elliptic.Curve, hash crypto.Hash, fieldLen int, data []byte) ([]byte, error) {
 	ecKey, ok := key.(*ecdsa.PrivateKey)
 	if !ok {
 		return nil, fmt.Errorf("%w: expected *ecdsa.PrivateKey", ErrInvalidKey)
 	}
-	if ecKey.Curve != elliptic.P256() {
-		return nil, fmt.Errorf("%w: expected P-256 curve", ErrInvalidKey)
+	if ecKey.Curve != curve {
+		return nil, fmt.Errorf("%w: expected %s curve", ErrInvalidKey, curve.Params().Name)
 	}
-	h := sha256.Sum256(data)
-	r, s, err := ecdsa.Sign(rand.Reader, ecKey, h[:])
+	h := hash.New()
+	h.Write(data)
+	digest := h.Sum(nil)
+	r, s, err := ecdsa.Sign(rand.Reader, ecKey, digest)
 	if err != nil {
 		return nil, err
 	}
-	// RFC 9421 Section 3.3.3: signature is r || s, each 32 bytes, big-endian
+	// RFC 9421: signature is r || s, each fieldLen bytes, big-endian, zero-padded
 	rBytes := r.Bytes()
 	sBytes := s.Bytes()
-	sig := make([]byte, 64)
-	copy(sig[32-len(rBytes):32], rBytes)
-	copy(sig[64-len(sBytes):64], sBytes)
+	sigLen := fieldLen * 2
+	sig := make([]byte, sigLen)
+	copy(sig[fieldLen-len(rBytes):fieldLen], rBytes)
+	copy(sig[sigLen-len(sBytes):sigLen], sBytes)
 	return sig, nil
 }
 
-func verifyECDSAP256(pub crypto.PublicKey, data, sig []byte) (bool, error) {
+func verifyECDSA(pub crypto.PublicKey, curve elliptic.Curve, hash crypto.Hash, fieldLen int, data, sig []byte) (bool, error) {
 	ecPub, ok := pub.(*ecdsa.PublicKey)
 	if !ok {
 		return false, fmt.Errorf("%w: expected *ecdsa.PublicKey", ErrInvalidKey)
 	}
-	if ecPub.Curve != elliptic.P256() {
-		return false, fmt.Errorf("%w: expected P-256 curve", ErrInvalidKey)
+	if ecPub.Curve != curve {
+		return false, fmt.Errorf("%w: expected %s curve", ErrInvalidKey, curve.Params().Name)
 	}
-	if len(sig) != 64 {
+	sigLen := fieldLen * 2
+	if len(sig) != sigLen {
 		return false, nil
 	}
-	r := new(big.Int).SetBytes(sig[:32])
-	s := new(big.Int).SetBytes(sig[32:])
-	h := sha256.Sum256(data)
-	return ecdsa.Verify(ecPub, h[:], r, s), nil
+	r := new(big.Int).SetBytes(sig[:fieldLen])
+	s := new(big.Int).SetBytes(sig[fieldLen:])
+	h := hash.New()
+	h.Write(data)
+	digest := h.Sum(nil)
+	return ecdsa.Verify(ecPub, digest, r, s), nil
 }
 
 // --- Ed25519 ---
@@ -141,19 +207,43 @@ func verifyEd25519(pub crypto.PublicKey, data, sig []byte) (bool, error) {
 	return ed25519.Verify(edPub, data, sig), nil
 }
 
-// --- HMAC-SHA256 ---
+// --- HMAC ---
 
 func signHMACSHA256(secret []byte, data []byte) ([]byte, error) {
+	return signHMAC(secret, sha256.New, data)
+}
+
+func verifyHMACSHA256(secret []byte, data, sig []byte) (bool, error) {
+	return verifyHMAC(secret, sha256.New, data, sig)
+}
+
+func signHMACSHA384(secret []byte, data []byte) ([]byte, error) {
+	return signHMAC(secret, sha512.New384, data)
+}
+
+func verifyHMACSHA384(secret []byte, data, sig []byte) (bool, error) {
+	return verifyHMAC(secret, sha512.New384, data, sig)
+}
+
+func signHMACSHA512(secret []byte, data []byte) ([]byte, error) {
+	return signHMAC(secret, sha512.New, data)
+}
+
+func verifyHMACSHA512(secret []byte, data, sig []byte) (bool, error) {
+	return verifyHMAC(secret, sha512.New, data, sig)
+}
+
+func signHMAC(secret []byte, hashFunc func() hash.Hash, data []byte) ([]byte, error) {
 	if len(secret) == 0 {
 		return nil, errors.New("httpsig: empty HMAC secret")
 	}
-	mac := hmac.New(sha256.New, secret)
+	mac := hmac.New(hashFunc, secret)
 	mac.Write(data)
 	return mac.Sum(nil), nil
 }
 
-func verifyHMACSHA256(secret []byte, data, sig []byte) (bool, error) {
-	expected, err := signHMACSHA256(secret, data)
+func verifyHMAC(secret []byte, hashFunc func() hash.Hash, data, sig []byte) (bool, error) {
+	expected, err := signHMAC(secret, hashFunc, data)
 	if err != nil {
 		return false, err
 	}

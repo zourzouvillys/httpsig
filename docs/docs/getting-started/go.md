@@ -140,4 +140,4 @@ protected := httpsig.RequireSignature(keyProvider, &httpsig.VerifyOptions{
 http.ListenAndServe(":8080", protected)
 ```
 
-See the [Integrations Guide](/docs/guides/integrations) for more details.
+See the [Integrations Guide](/guides/integrations) for more details.

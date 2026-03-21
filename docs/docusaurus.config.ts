@@ -36,6 +36,7 @@ const config: Config = {
       'classic',
       {
         docs: {
+          routeBasePath: '/',
           sidebarPath: './sidebars.ts',
           editUrl:
             'https://github.com/zourzouvillys/httpsig/tree/main/docs/',
@@ -78,15 +79,15 @@ const config: Config = {
           items: [
             {
               label: 'Getting Started',
-              to: '/docs/getting-started/go',
+              to: '/getting-started/go',
             },
             {
               label: 'Concepts',
-              to: '/docs/concepts/how-it-works',
+              to: '/concepts/how-it-works',
             },
             {
               label: 'Guides',
-              to: '/docs/guides/signing',
+              to: '/guides/signing',
             },
           ],
         },

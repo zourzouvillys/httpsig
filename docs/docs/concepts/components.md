@@ -113,7 +113,7 @@ Parameters can be combined. `;req` with `;key` extracts a dictionary member from
 "signature";req;key="sig1": :Y2xpZW50IHNpZyBieXRlcw==:
 ```
 
-This binds the response signature to the client's exact signature bytes. See the [Signing Responses](/docs/guides/signing-responses) guide.
+This binds the response signature to the client's exact signature bytes. See the [Signing Responses](/guides/signing-responses) guide.
 
 ## Choosing Components
 

@@ -14,9 +14,16 @@ class SmokeTest {
     fun `algorithm round-trips from value`() {
         for (alg in listOf(
             Algorithm.RsaPssSha512,
+            Algorithm.RsaPssSha256,
+            Algorithm.RsaPssSha384,
+            Algorithm.RsaV15Sha256,
             Algorithm.EcdsaP256Sha256,
+            Algorithm.EcdsaP384Sha384,
+            Algorithm.EcdsaP521Sha512,
             Algorithm.Ed25519,
             Algorithm.HmacSha256,
+            Algorithm.HmacSha384,
+            Algorithm.HmacSha512,
         )) {
             assertEquals(alg, Algorithm.fromValue(alg.value))
         }

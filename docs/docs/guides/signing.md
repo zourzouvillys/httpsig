@@ -8,7 +8,7 @@ This guide walks through signing HTTP requests in all five languages.
 
 ## Step 1: Create a Signing Key
 
-The auto-detect constructors infer the algorithm from the key type. You can also use explicit per-algorithm constructors (see [Key Management](/docs/concepts/key-management)).
+The auto-detect constructors infer the algorithm from the key type. You can also use explicit per-algorithm constructors (see [Key Management](/concepts/key-management)).
 
 import Tabs from '@theme/Tabs';
 import TabItem from '@theme/TabItem';
@@ -270,4 +270,4 @@ req.Header.Set("Content-Digest", digest)
 // Now include "content-digest" in params.Components and sign
 ```
 
-See [Content-Digest](/docs/concepts/content-digest) for the full details.
+See [Content-Digest](/concepts/content-digest) for the full details.
