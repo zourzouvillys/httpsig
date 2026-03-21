@@ -133,7 +133,7 @@ let session = Session(interceptor: interceptor)
 let response = await session.request("https://example.com/api").serializingData().response
 ```
 
-See the [Integrations Guide](/docs/guides/integrations) for more details.
+See the [Integrations Guide](/guides/integrations) for more details.
 
 ## Secure Enclave
 

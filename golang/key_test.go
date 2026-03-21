@@ -257,20 +257,48 @@ func TestNewVerifyingKeyFromPublic(t *testing.T) {
 }
 
 func TestDetectAlgorithmErrors(t *testing.T) {
-	// Unsupported EC curve (P-384)
-	p384Key, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	// Unsupported EC curve (P-224)
+	p224Key, err := ecdsa.GenerateKey(elliptic.P224(), rand.Reader)
 	if err != nil {
-		t.Fatalf("generate P-384 key: %v", err)
+		t.Fatalf("generate P-224 key: %v", err)
 	}
-	_, err = detectAlgorithm(&p384Key.PublicKey)
+	_, err = detectAlgorithm(&p224Key.PublicKey)
 	if !errors.Is(err, ErrInvalidKey) {
-		t.Errorf("P-384: got err=%v, want ErrInvalidKey", err)
+		t.Errorf("P-224: got err=%v, want ErrInvalidKey", err)
 	}
 
 	// Unsupported key type (a string, just to exercise the default branch)
 	_, err = detectAlgorithm("not-a-key")
 	if !errors.Is(err, ErrInvalidKey) {
 		t.Errorf("string key: got err=%v, want ErrInvalidKey", err)
+	}
+}
+
+func TestDetectAlgorithmP384(t *testing.T) {
+	key, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	if err != nil {
+		t.Fatalf("generate P-384 key: %v", err)
+	}
+	alg, err := detectAlgorithm(&key.PublicKey)
+	if err != nil {
+		t.Fatalf("detectAlgorithm: %v", err)
+	}
+	if alg != AlgorithmECDSAP384SHA384 {
+		t.Errorf("Algorithm = %q, want %q", alg, AlgorithmECDSAP384SHA384)
+	}
+}
+
+func TestDetectAlgorithmP521(t *testing.T) {
+	key, err := ecdsa.GenerateKey(elliptic.P521(), rand.Reader)
+	if err != nil {
+		t.Fatalf("generate P-521 key: %v", err)
+	}
+	alg, err := detectAlgorithm(&key.PublicKey)
+	if err != nil {
+		t.Fatalf("detectAlgorithm: %v", err)
+	}
+	if alg != AlgorithmECDSAP521SHA512 {
+		t.Errorf("Algorithm = %q, want %q", alg, AlgorithmECDSAP521SHA512)
 	}
 }
 

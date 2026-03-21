@@ -1,9 +1,16 @@
 /** Signature algorithm identifiers per RFC 9421 Section 3.3. */
 export type Algorithm =
+  | "rsa-pss-sha256"
+  | "rsa-pss-sha384"
   | "rsa-pss-sha512"
+  | "rsa-v1_5-sha256"
   | "ecdsa-p256-sha256"
+  | "ecdsa-p384-sha384"
+  | "ecdsa-p521-sha512"
   | "ed25519"
-  | "hmac-sha256";
+  | "hmac-sha256"
+  | "hmac-sha384"
+  | "hmac-sha512";
 
 /** Digest algorithm identifiers per RFC 9530. */
 export type DigestAlgorithm = "sha-256" | "sha-512";

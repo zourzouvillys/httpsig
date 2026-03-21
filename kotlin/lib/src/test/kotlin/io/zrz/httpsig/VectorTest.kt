@@ -272,6 +272,7 @@ class VectorTest {
                 val pk = loadEcPrivateKey(TESTDATA.resolve(v.keyFile!!))
                 Keys.ecdsaP256SigningKey(v.keyId, pk)
             }
+            else -> throw IllegalArgumentException("unsupported test vector algorithm: ${v.algorithm}")
         }
     }
 
@@ -294,6 +295,7 @@ class VectorTest {
                 val pk = loadSpkiPublicKey(TESTDATA.resolve(v.pubKeyFile!!), "EC")
                 Keys.ecdsaP256VerifyingKey(v.keyId, pk)
             }
+            else -> throw IllegalArgumentException("unsupported test vector algorithm: ${v.algorithm}")
         }
     }
 

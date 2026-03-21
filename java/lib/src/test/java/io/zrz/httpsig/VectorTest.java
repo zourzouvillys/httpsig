@@ -282,6 +282,7 @@ class VectorTest {
                 PrivateKey pk = loadEcPrivateKey(TESTDATA.resolve(v.keyFile));
                 yield Keys.ecdsaP256SigningKey(v.keyId, pk);
             }
+            default -> throw new IllegalArgumentException("unsupported algorithm in test vector: " + alg);
         };
     }
 
@@ -304,6 +305,7 @@ class VectorTest {
                 PublicKey pk = loadSpkiPublicKey(TESTDATA.resolve(v.pubKeyFile), "EC");
                 yield Keys.ecdsaP256VerifyingKey(v.keyId, pk);
             }
+            default -> throw new IllegalArgumentException("unsupported algorithm in test vector: " + alg);
         };
     }
 

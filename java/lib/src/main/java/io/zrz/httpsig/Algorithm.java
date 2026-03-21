@@ -6,9 +6,16 @@ package io.zrz.httpsig;
 public enum Algorithm {
 
     RSA_PSS_SHA512("rsa-pss-sha512"),
+    RSA_PSS_SHA256("rsa-pss-sha256"),
+    RSA_PSS_SHA384("rsa-pss-sha384"),
+    RSA_V1_5_SHA256("rsa-v1_5-sha256"),
     ECDSA_P256_SHA256("ecdsa-p256-sha256"),
+    ECDSA_P384_SHA384("ecdsa-p384-sha384"),
+    ECDSA_P521_SHA512("ecdsa-p521-sha512"),
     ED25519("ed25519"),
-    HMAC_SHA256("hmac-sha256");
+    HMAC_SHA256("hmac-sha256"),
+    HMAC_SHA384("hmac-sha384"),
+    HMAC_SHA512("hmac-sha512");
 
     private final String value;
 
