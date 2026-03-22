@@ -33,6 +33,7 @@ const sidebars: SidebarsConfig = {
         'guides/signing',
         'guides/verifying',
         'guides/signing-responses',
+        'guides/accept-signature',
         'guides/integrations',
         'guides/proxy-forwarding',
       ],
