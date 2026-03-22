@@ -66,7 +66,8 @@ class SecurityTest {
             Duration.ofSeconds(30),
             null,
             null,
-            () -> now
+            () -> now,
+            null
         );
 
         var ex = assertThrows(HttpSigException.class,
@@ -96,7 +97,8 @@ class SecurityTest {
             Duration.ofHours(2),
             null,
             null,
-            () -> now
+            () -> now,
+            null
         );
 
         var result = Verifier.verify(signedRequest, (keyId, alg) -> hmacKey(), looseOptions, null);
@@ -124,7 +126,8 @@ class SecurityTest {
             null,
             null,
             null,
-            () -> now
+            () -> now,
+            null
         );
 
         var result = Verifier.verify(signedRequest, (keyId, alg) -> hmacKey(), noSkewOptions, null);
@@ -150,7 +153,7 @@ class SecurityTest {
             () -> Verifier.verify(
                 signedRequest,
                 (keyId, alg) -> hmacKey(),
-                new Verifier.VerifyOptions(null, null, null, null, null, () -> now),
+                new Verifier.VerifyOptions(null, null, null, null, null, () -> now, null),
                 null
             ));
         assertTrue(ex.getMessage().contains("expired"),
@@ -175,7 +178,7 @@ class SecurityTest {
         var result = Verifier.verify(
             signedRequest,
             (keyId, alg) -> hmacKey(),
-            new Verifier.VerifyOptions(null, null, null, false, null, () -> now),
+            new Verifier.VerifyOptions(null, null, null, false, null, () -> now, null),
             null
         );
         assertEquals("sig1", result.label());

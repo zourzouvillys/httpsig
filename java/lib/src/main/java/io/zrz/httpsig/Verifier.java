@@ -27,6 +27,7 @@ public final class Verifier {
      * @param rejectExpired      reject signatures past their expires time (defaults to true, set false to opt out)
      * @param requiredLabel      if set, only verify the signature with this specific label
      * @param now                clock source for age/expiry checks
+     * @param nonceChecker       if set, called after signature verification to validate the nonce
      */
     public record VerifyOptions(
         List<ComponentIdentifier> requiredComponents,
@@ -34,14 +35,73 @@ public final class Verifier {
         Duration maxClockSkew,
         Boolean rejectExpired,
         String requiredLabel,
-        Supplier<Instant> now
+        Supplier<Instant> now,
+        NonceChecker nonceChecker
     ) {
         public VerifyOptions {
             if (now == null) now = Instant::now;
         }
 
         public static VerifyOptions defaults() {
-            return new VerifyOptions(null, null, null, true, null, null);
+            return new VerifyOptions(null, null, null, true, null, null, null);
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static final class Builder {
+            private List<ComponentIdentifier> requiredComponents;
+            private Duration maxAge;
+            private Duration maxClockSkew;
+            private Boolean rejectExpired;
+            private String requiredLabel;
+            private Supplier<Instant> now;
+            private NonceChecker nonceChecker;
+
+            private Builder() {}
+
+            public Builder requiredComponents(List<ComponentIdentifier> requiredComponents) {
+                this.requiredComponents = requiredComponents;
+                return this;
+            }
+
+            public Builder maxAge(Duration maxAge) {
+                this.maxAge = maxAge;
+                return this;
+            }
+
+            public Builder maxClockSkew(Duration maxClockSkew) {
+                this.maxClockSkew = maxClockSkew;
+                return this;
+            }
+
+            public Builder rejectExpired(Boolean rejectExpired) {
+                this.rejectExpired = rejectExpired;
+                return this;
+            }
+
+            public Builder requiredLabel(String requiredLabel) {
+                this.requiredLabel = requiredLabel;
+                return this;
+            }
+
+            public Builder now(Supplier<Instant> now) {
+                this.now = now;
+                return this;
+            }
+
+            public Builder nonceChecker(NonceChecker nonceChecker) {
+                this.nonceChecker = nonceChecker;
+                return this;
+            }
+
+            public VerifyOptions build() {
+                return new VerifyOptions(
+                    requiredComponents, maxAge, maxClockSkew,
+                    rejectExpired, requiredLabel, now, nonceChecker
+                );
+            }
         }
     }
 
@@ -54,7 +114,8 @@ public final class Verifier {
         Algorithm algorithm,
         List<ComponentIdentifier> components,
         Long created,
-        Long expires
+        Long expires,
+        String nonce
     ) {}
 
     /**
@@ -217,13 +278,25 @@ public final class Verifier {
             throw new HttpSigException("signature verification failed for label '" + label + "'");
         }
 
+        // nonce check (after cryptographic verification succeeds)
+        if (options.nonceChecker() != null && nonce != null) {
+            try {
+                options.nonceChecker().check(nonce, key.keyId(), key.algorithm());
+            } catch (HttpSigException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new HttpSigException("nonce check failed: " + e.getMessage(), e);
+            }
+        }
+
         return new VerifyResult(
             label,
             key.keyId(),
             key.algorithm(),
             List.copyOf(components),
             created,
-            expires
+            expires,
+            nonce
         );
     }
 

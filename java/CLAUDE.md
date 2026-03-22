@@ -21,7 +21,8 @@ cd java
 - `Keys` is a factory class with static methods for all key types
 - `RawMessage` is a concrete `HttpMessage` for testing
 - Algorithm param in `SignatureParameters` is optional; test vectors omit `alg=`
-- `VerifyOptions` record: `(requiredComponents, maxAge, maxClockSkew, rejectExpired, requiredLabel, now)`
+- `VerifyOptions` record: `(requiredComponents, maxAge, maxClockSkew, rejectExpired, requiredLabel, now, nonceChecker)` — also has a `Builder`
+- `NonceChecker` is a functional interface: `(nonce, keyId, algorithm) throws Exception`
 - `maxClockSkew` rejects future-dated `created` timestamps
 - Verifier checks `alg` parameter against resolved key's algorithm
 - Integration modules use `api(project(":lib"))` for transitive dependency

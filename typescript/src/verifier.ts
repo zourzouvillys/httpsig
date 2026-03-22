@@ -123,6 +123,10 @@ export async function verifyMessage(
     }
     if (!valid) continue;
 
+    if (opts?.nonceChecker && sigParams.nonce) {
+      await opts.nonceChecker(sigParams.nonce, key.keyId, key.algorithm);
+    }
+
     return {
       label,
       keyId: key.keyId,
@@ -130,6 +134,7 @@ export async function verifyMessage(
       components: sigParams.components,
       created: sigParams.created,
       expires: sigParams.expires,
+      nonce: sigParams.nonce,
     };
   }
 
