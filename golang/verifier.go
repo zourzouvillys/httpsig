@@ -13,6 +13,12 @@ type VerifyOptions struct {
 	// covered components. Verification fails if any are missing.
 	RequiredComponents []ComponentIdentifier
 
+	// Requirements, if set, provides full signature requirements for filtering.
+	// It takes precedence over RequiredComponents for the required-components check,
+	// and additionally filters by KeyID, Algorithm, and Tag when those fields are set.
+	// When nil, RequiredComponents is used as before (backward-compatible).
+	Requirements *SignatureRequirements
+
 	// MaxAge is the maximum allowed age of a signature based on the "created" parameter.
 	// Zero means no age check.
 	MaxAge time.Duration
@@ -139,9 +145,27 @@ func VerifyMessage(msg Message, provider KeyProvider, opts *VerifyOptions, reqMs
 			continue
 		}
 
-		// Check required components
-		if opts != nil && !hasRequiredComponents(sigParams.Components, opts.RequiredComponents) {
-			continue
+		// Check required components and requirements filtering
+		if opts != nil {
+			if opts.Requirements != nil {
+				// Use Requirements for component and metadata filtering.
+				if !hasRequiredComponents(sigParams.Components, opts.Requirements.Components) {
+					continue
+				}
+				if opts.Requirements.KeyID != "" && sigParams.KeyID != opts.Requirements.KeyID {
+					continue
+				}
+				if opts.Requirements.Algorithm != "" && sigParams.Algorithm != opts.Requirements.Algorithm {
+					continue
+				}
+				if opts.Requirements.Tag != "" {
+					if sigParams.Tag == nil || *sigParams.Tag != opts.Requirements.Tag {
+						continue
+					}
+				}
+			} else if !hasRequiredComponents(sigParams.Components, opts.RequiredComponents) {
+				continue
+			}
 		}
 
 		// Check time constraints

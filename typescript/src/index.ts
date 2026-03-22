@@ -9,6 +9,7 @@ export type {
   SFVDictMember,
   ComponentIdentifier,
   SignatureParameters,
+  SignatureRequirements,
   HttpMessage,
   SigningKey,
   VerifyingKey,
@@ -103,6 +104,13 @@ export {
 
 // Content-Digest
 export { contentDigest, verifyContentDigest } from "./digest.js";
+
+// Accept-Signature (RFC 9421 Section 5)
+export {
+  buildAcceptSignature,
+  parseAcceptSignature,
+  toSignatureParameters,
+} from "./acceptSignature.js";
 
 // Message helpers
 export { RawMessage, buildRequestMessage, buildResponseMessage } from "./message.js";
