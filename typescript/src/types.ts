@@ -116,9 +116,21 @@ export interface VerifyResult {
   nonce?: string;
 }
 
+/** Requirements for what a valid signature must contain. Used for both verification filtering and Accept-Signature negotiation. */
+export interface SignatureRequirements {
+  components: ComponentIdentifier[];
+  keyId?: string;
+  algorithm?: Algorithm;
+  tag?: string;
+  requireCreated?: boolean;
+  requireExpires?: boolean;
+}
+
 /** Options for signature verification. */
 export interface VerifyOptions {
   requiredComponents?: ComponentIdentifier[];
+  /** Full signature requirements for filtering. Takes precedence over requiredComponents when set. */
+  requirements?: SignatureRequirements;
   maxAgeMs?: number;
   /** Maximum allowed forward clock skew in milliseconds. Rejects signatures with created > now + maxClockSkewMs. */
   maxClockSkewMs?: number;

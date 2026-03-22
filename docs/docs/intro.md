@@ -87,9 +87,16 @@ Simple session cookies may still be the right choice for low-stakes browser sess
 | Algorithm | Type | Notes |
 |---|---|---|
 | **ecdsa-p256-sha256** | Asymmetric | Best balance of speed, security, and KMS support |
+| **ecdsa-p384-sha384** | Asymmetric | Higher security margin (CNSA Suite) |
+| **ecdsa-p521-sha512** | Asymmetric | Maximum EC security level |
 | **ed25519** | Asymmetric | Fastest, compact signatures |
 | **rsa-pss-sha512** | Asymmetric | Wide legacy support |
+| **rsa-pss-sha384** | Asymmetric | RSA-PSS with SHA-384 |
+| **rsa-pss-sha256** | Asymmetric | RSA-PSS with SHA-256 |
+| **rsa-v1\_5-sha256** | Asymmetric | PKCS#1 v1.5 for legacy RSA systems |
 | **hmac-sha256** | Symmetric | Shared-secret scenarios |
+| **hmac-sha384** | Symmetric | Higher-strength HMAC |
+| **hmac-sha512** | Symmetric | Maximum HMAC security |
 
 ### Supported Languages
 
@@ -124,6 +131,8 @@ Every platform has a path to non-extractable keys:
 - `KeyPair` type with auto-detection: pass any private key, the library detects the algorithm and derives the public key
 - Response signing with request binding (cryptographic proof that a response was generated for a specific request)
 - Verification security: algorithm consistency checks, future-dated signature rejection (`maxClockSkew`), replay protection via `maxAge` and `expires`
+- Nonce checker hook for application-level replay detection
+- Signature negotiation via `Accept-Signature` header ([RFC 9421 §5](/guides/accept-signature))
 
 ## Next Steps
 
