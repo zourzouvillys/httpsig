@@ -1,0 +1,243 @@
+<div class="pg">
+  <div class="pg-head">
+    <h1>HTTP Signatures Playground</h1>
+    <p>Sign, verify, and inspect <a href="https://www.rfc-editor.org/rfc/rfc9421">RFC 9421</a> HTTP Message
+      Signatures — like jwt.io, for HTTP signatures. Everything runs in your browser using the same
+      <code>@zourzouvillys/httpsig</code> TypeScript library and the Web Crypto API.</p>
+    <span class="priv">🔒 Keys are generated and used locally. Nothing is sent anywhere.</span>
+  </div>
+
+  <div class="pg-tabs" role="tablist">
+    <button class="pg-tab active" data-tab="sign">Sign</button>
+    <button class="pg-tab" data-tab="verify">Verify</button>
+    <button class="pg-tab" data-tab="inspect">Inspect</button>
+  </div>
+
+  <!-- ============================ SIGN ============================ -->
+  <section class="pg-panel active" id="panel-sign">
+    <div class="pg-grid">
+      <div class="pg-card">
+        <h2>Message &amp; key</h2>
+        <div class="pg-card-body">
+          <div class="row">
+            <div class="field" style="flex:0 0 7rem">
+              <label>Method</label>
+              <select id="s-method">
+                <option>GET</option><option selected>POST</option><option>PUT</option>
+                <option>PATCH</option><option>DELETE</option>
+              </select>
+            </div>
+            <div class="field" style="flex:1 1 14rem">
+              <label>URL</label>
+              <input type="text" id="s-url" value="https://example.com/foo?param=value" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Headers <span class="hint">— one per line, <code>Name: value</code></span></label>
+            <textarea id="s-headers" class="code" rows="3">Host: example.com
+Content-Type: application/json</textarea>
+          </div>
+
+          <div class="field">
+            <label>Body</label>
+            <textarea id="s-body" rows="2">{"hello": "world"}</textarea>
+            <div class="btn-row">
+              <button class="btn sm" id="s-adddigest">+ add Content-Digest header</button>
+              <button class="btn sm" id="s-example">load example request</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Covered components <span class="hint">— what the signature protects</span></label>
+            <div class="checks compact" id="s-components"></div>
+          </div>
+
+          <div class="row">
+            <div class="field"><label>Label</label><input type="text" id="s-label" value="sig1" /></div>
+            <div class="field"><label>Key ID</label><input type="text" id="s-keyid" value="test-key" /></div>
+          </div>
+
+          <div class="field">
+            <label>Signature parameters</label>
+            <div class="checks">
+              <label><input type="checkbox" id="s-created-on" checked /> created (now)</label>
+              <label><input type="checkbox" id="s-alg-on" /> include <code>alg</code></label>
+            </div>
+            <div class="row" style="margin-top:0.5rem">
+              <div class="field"><label>Expires in (s)</label><input type="number" id="s-expires" placeholder="none" min="0" /></div>
+              <div class="field"><label>Tag</label><input type="text" id="s-tag" placeholder="none" /></div>
+              <div class="field" style="flex:2 1 12rem">
+                <label>Nonce</label>
+                <div class="row" style="gap:0.4rem">
+                  <input type="text" id="s-nonce" placeholder="none" />
+                  <button class="btn sm" id="s-nonce-gen" type="button">gen</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Algorithm</label>
+            <select id="s-algo">
+              <option value="ed25519">ed25519</option>
+              <option value="ecdsa-p256-sha256">ecdsa-p256-sha256</option>
+              <option value="rsa-pss-sha512">rsa-pss-sha512</option>
+              <option value="hmac-sha256">hmac-sha256</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Key source</label>
+            <div class="checks">
+              <label><input type="radio" name="s-keysrc" value="generate" checked /> generate</label>
+              <label><input type="radio" name="s-keysrc" value="pem" /> paste PEM</label>
+              <label><input type="radio" name="s-keysrc" value="hmac" /> HMAC secret</label>
+            </div>
+            <div id="s-key-generate" class="src-block">
+              <div class="btn-row"><button class="btn sm" id="s-gen" type="button">⚙ generate key</button></div>
+              <div id="s-genout"></div>
+            </div>
+            <div id="s-key-pem" class="src-block" hidden>
+              <textarea id="s-pem" class="code" rows="4" placeholder="-----BEGIN PRIVATE KEY-----  (PKCS#8)"></textarea>
+            </div>
+            <div id="s-key-hmac" class="src-block" hidden>
+              <div class="row">
+                <div class="field" style="flex:1 1 12rem"><label>Secret</label><input type="text" id="s-hmac" placeholder="shared secret" /></div>
+                <div class="field" style="flex:0 0 7rem"><label>Encoding</label>
+                  <select id="s-hmac-enc"><option value="utf8">utf-8</option><option value="base64">base64</option></select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="btn-row"><button class="btn primary" id="s-sign">Sign request →</button></div>
+        </div>
+      </div>
+
+      <div class="pg-card">
+        <h2>Output</h2>
+        <div class="pg-card-body" id="s-output">
+          <p class="muted-note">Configure the message and key on the left, then <b>Sign request</b>. The
+            signature base, the <code>Signature-Input</code> and <code>Signature</code> headers, and the
+            full signed request will appear here.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ VERIFY ============================ -->
+  <section class="pg-panel" id="panel-verify">
+    <div class="pg-grid">
+      <div class="pg-card">
+        <h2>Signed message &amp; key</h2>
+        <div class="pg-card-body">
+          <div class="row">
+            <div class="field" style="flex:0 0 7rem">
+              <label>Method</label>
+              <select id="v-method">
+                <option>GET</option><option selected>POST</option><option>PUT</option>
+                <option>PATCH</option><option>DELETE</option>
+              </select>
+            </div>
+            <div class="field" style="flex:1 1 14rem">
+              <label>URL</label>
+              <input type="text" id="v-url" value="https://example.com/foo?param=value" />
+            </div>
+          </div>
+          <div class="field">
+            <label>Headers <span class="hint">— include <code>Signature-Input</code> and <code>Signature</code></span></label>
+            <textarea id="v-headers" class="code" rows="6">Host: example.com
+Content-Type: application/json</textarea>
+          </div>
+          <div class="field">
+            <label>Body</label>
+            <textarea id="v-body" rows="2">{"hello": "world"}</textarea>
+          </div>
+
+          <div class="field">
+            <label>Algorithm</label>
+            <select id="v-algo">
+              <option value="ed25519">ed25519</option>
+              <option value="ecdsa-p256-sha256">ecdsa-p256-sha256</option>
+              <option value="rsa-pss-sha512">rsa-pss-sha512</option>
+              <option value="hmac-sha256">hmac-sha256</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Verifying key</label>
+            <div class="checks">
+              <label><input type="radio" name="v-keysrc" value="pem" checked /> public key PEM</label>
+              <label><input type="radio" name="v-keysrc" value="hmac" /> HMAC secret</label>
+            </div>
+            <div id="v-key-pem" class="src-block">
+              <textarea id="v-pem" class="code" rows="4" placeholder="-----BEGIN PUBLIC KEY-----  (SPKI)"></textarea>
+            </div>
+            <div id="v-key-hmac" class="src-block" hidden>
+              <div class="row">
+                <div class="field" style="flex:1 1 12rem"><label>Secret</label><input type="text" id="v-hmac" placeholder="shared secret" /></div>
+                <div class="field" style="flex:0 0 7rem"><label>Encoding</label>
+                  <select id="v-hmac-enc"><option value="utf8">utf-8</option><option value="base64">base64</option></select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <details class="adv">
+            <summary>Verification options</summary>
+            <div class="row">
+              <div class="field"><label>Max age (s)</label><input type="number" id="v-maxage" placeholder="none" min="0" /></div>
+              <div class="field"><label>Clock skew (s)</label><input type="number" id="v-skew" placeholder="none" min="0" /></div>
+            </div>
+            <div class="checks"><label><input type="checkbox" id="v-rejexp" checked /> reject expired</label></div>
+          </details>
+
+          <div class="btn-row"><button class="btn primary" id="v-verify">Verify signature</button></div>
+        </div>
+      </div>
+
+      <div class="pg-card">
+        <h2>Result</h2>
+        <div class="pg-card-body" id="v-output">
+          <div class="banner idle"><span class="big">○</span> Paste a signed request and a key, then <b>Verify</b>.</div>
+          <p class="muted-note">Tip: sign something in the <b>Sign</b> tab and use <b>Send to Verify →</b> to
+            carry the request, headers, and key over automatically.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================ INSPECT ============================ -->
+  <section class="pg-panel" id="panel-inspect">
+    <div class="pg-grid">
+      <div class="pg-card">
+        <h2>Signature headers</h2>
+        <div class="pg-card-body">
+          <div class="field">
+            <label>Signature-Input</label>
+            <textarea id="i-input" class="code" rows="4" placeholder='sig1=("@method" "@path");created=1618884473;keyid="test-key"'></textarea>
+          </div>
+          <div class="field">
+            <label>Signature</label>
+            <textarea id="i-sig" class="code" rows="4" placeholder="sig1=:Base64Signature==:"></textarea>
+          </div>
+          <div class="btn-row">
+            <button class="btn primary" id="i-go">Decode</button>
+            <button class="btn sm" id="i-example">load example</button>
+          </div>
+          <p class="muted-note">Decoding does not check the signature — it just parses the structured fields,
+            showing the covered components, parameters, and signature bytes. No key required.</p>
+        </div>
+      </div>
+      <div class="pg-card">
+        <h2>Decoded</h2>
+        <div class="pg-card-body" id="i-output">
+          <p class="muted-note">Paste <code>Signature-Input</code> and <code>Signature</code> header values
+            and press <b>Decode</b>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script type="module" src="%BASE%/playground/app.js"></script>

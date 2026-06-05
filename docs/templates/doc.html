@@ -1,0 +1,61 @@
+<div class="doc-shell">
+  <aside class="doc-side">
+    <details class="doc-side-toggle">
+      <summary>On this section</summary>
+    </details>
+    <nav class="doc-side-nav">
+      {{sidebar}}
+    </nav>
+  </aside>
+
+  <article class="doc-main">
+    <div class="doc-body">
+      {{content}}
+    </div>
+    <footer class="doc-footer">
+      <p>Source: <a href="{{github}}/blob/main/{{source_path}}"><code>{{source_path}}</code></a></p>
+    </footer>
+  </article>
+
+  <aside class="doc-toc {{toc_wrap}}">
+    <p class="doc-toc-label">On this page</p>
+    <ul>
+      {{toc}}
+    </ul>
+  </aside>
+</div>
+
+<script>
+(function () {
+  var groups = document.querySelectorAll('.httabs');
+  if (!groups.length) return;
+  function panelHas(t, val) {
+    var btns = t.querySelectorAll('.httab'), found = false;
+    btns.forEach(function (b) { if (b.getAttribute('data-tab') === val) found = true; });
+    return found;
+  }
+  function activate(group, val) {
+    groups.forEach(function (t) {
+      if (group && t.getAttribute('data-group') !== group) return;
+      if (!panelHas(t, val)) return;
+      t.querySelectorAll('.httab').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-tab') === val); });
+      t.querySelectorAll('.httabs-panel').forEach(function (p) { p.classList.toggle('active', p.getAttribute('data-tab') === val); });
+    });
+    if (group) { try { localStorage.setItem('httabs:' + group, val); } catch (e) {} }
+  }
+  groups.forEach(function (t) {
+    var group = t.getAttribute('data-group');
+    t.querySelectorAll('.httab').forEach(function (b) {
+      b.addEventListener('click', function () { activate(group, b.getAttribute('data-tab')); });
+    });
+  });
+  // Restore the per-group choice (e.g. "always show me Kotlin") across pages.
+  groups.forEach(function (t) {
+    var group = t.getAttribute('data-group');
+    if (!group) return;
+    var saved;
+    try { saved = localStorage.getItem('httabs:' + group); } catch (e) {}
+    if (saved) activate(group, saved);
+  });
+})();
+</script>

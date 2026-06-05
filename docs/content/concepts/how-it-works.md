@@ -10,27 +10,25 @@ HTTP Message Signatures (RFC 9421) provide a mechanism to create, encode, and ve
 
 Signing and verification follow a straightforward process:
 
-```
-Sender                                    Receiver
-  |                                          |
-  |  1. Build signature base from            |
-  |     selected HTTP components             |
-  |                                          |
-  |  2. Sign the base with private key       |
-  |                                          |
-  |  3. Add Signature-Input and              |
-  |     Signature headers                    |
-  |                                          |
-  |  --------- HTTP Message ----------->     |
-  |                                          |
-  |     4. Parse Signature-Input header      |
-  |                                          |
-  |     5. Reconstruct the signature base    |
-  |        from the same components          |
-  |                                          |
-  |     6. Verify signature with public key  |
-  |                                          |
-```
+<div class="sigflow">
+  <div class="sigflow-col sigflow-sender">
+    <div class="sigflow-head"><span class="sigflow-role">Sender</span><span class="sigflow-key">🔑 private key</span></div>
+    <ol class="sigflow-steps">
+      <li><span class="n">1</span><div><b>Build the signature base</b><p>from the selected HTTP components</p></div></li>
+      <li><span class="n">2</span><div><b>Sign the base</b><p>with the private key</p></div></li>
+      <li><span class="n">3</span><div><b>Attach the headers</b><p><code>Signature-Input</code> and <code>Signature</code></p></div></li>
+    </ol>
+  </div>
+  <div class="sigflow-wire"><span class="chip">HTTP message</span></div>
+  <div class="sigflow-col sigflow-receiver">
+    <div class="sigflow-head"><span class="sigflow-role">Receiver</span><span class="sigflow-key">🔑 public key</span></div>
+    <ol class="sigflow-steps">
+      <li><span class="n">4</span><div><b>Parse <code>Signature-Input</code></b><p>read which components were covered</p></div></li>
+      <li><span class="n">5</span><div><b>Reconstruct the base</b><p>from the same components</p></div></li>
+      <li><span class="n">6</span><div><b>Verify the signature</b><p>with the public key</p></div></li>
+    </ol>
+  </div>
+</div>
 
 ## Signature Base
 

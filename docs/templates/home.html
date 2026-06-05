@@ -1,0 +1,110 @@
+<div class="container">
+<section class="hero">
+  <p class="hero-kicker">RFC 9421 · RFC 9530 · Five languages</p>
+  <h1>httpsig</h1>
+  <p class="hero-tag">Cryptographic proof of who sent an HTTP message — per request, no bearer tokens.</p>
+  <p class="hero-lede">
+    <b>httpsig</b> is a multi-language library for <b>HTTP Message Signatures (RFC 9421)</b> and
+    <b>Content-Digest (RFC 9530)</b>. It signs the parts of a request or response that matter — method,
+    path, headers, body digest — so a recipient can prove the message came from the holder of a specific
+    key and was not altered in flight. The same core abstractions are implemented natively in
+    <b>Go</b>, <b>TypeScript</b>, <b>Java</b>, <b>Swift</b>, and <b>Kotlin</b>, all passing the shared
+    RFC 9421 test vectors.
+  </p>
+  <p class="hero-cta">
+    <a class="btn-primary" href="%BASE%/playground/">Open the playground →</a>
+    <a class="btn-ghost" href="%BASE%/docs/">Read the docs</a>
+    <a class="btn-ghost" href="%BASE%/viz/">Interactive diagrams</a>
+  </p>
+  <p class="hero-status">Try it now: the playground signs and verifies real RFC 9421 messages entirely in your browser — generated keys never leave the page.</p>
+</section>
+</div>
+
+<div class="container">
+<section class="band">
+  <h2>What it does</h2>
+  <p class="band-note">
+    A bearer token grants access to whoever holds it — steal the token, impersonate the user. An
+    <b>HTTP message signature</b> binds authority to a <i>key</i> and to <i>this specific message</i>:
+    the signer covers a chosen set of components, hashes them into a canonical <b>signature base</b>, and
+    signs it. Every request runs the same pipeline:
+  </p>
+  <div class="flow-strip">
+    <span class="flow-step"><b>1</b> select components</span><i>→</i>
+    <span class="flow-step"><b>2</b> build signature base</span><i>→</i>
+    <span class="flow-step"><b>3</b> sign</span><i>→</i>
+    <span class="flow-step"><b>4</b> attach Signature headers</span><i>→</i>
+    <span class="flow-step"><b>5</b> send</span><i>→</i>
+    <span class="flow-step muted">verify on receipt</span>
+  </div>
+</section>
+</div>
+
+<div class="container">
+<section class="explainer">
+  <h2>How signing works</h2>
+  <p>
+    The signer lists the components it wants to cover (e.g. <code>@method</code>, <code>@path</code>,
+    <code>content-digest</code>) plus metadata — key id, created/expires timestamps, an optional nonce.
+    Those become the <b>signature base</b>: one canonical line per component, ending with the
+    <code>@signature-params</code> line. The base is signed; the result travels in two headers —
+    <code>Signature-Input</code> (what was covered) and <code>Signature</code> (the bytes). A verifier
+    reconstructs the same base from the message it received and checks the signature against the
+    signer's public key. Change a single covered byte and verification fails.
+  </p>
+  <p class="explainer-hint">▶ Toggle the covered components and watch the exact signed bytes — the <em>signature base</em> — assemble:</p>
+  <iframe src="%BASE%/viz/signature-base.html?embed=1" title="Building the signature base" loading="lazy" class="embed" style="height:440px"></iframe>
+</section>
+</div>
+
+<div class="container">
+<section class="band">
+  <h2>What you get</h2>
+  <div class="feature-grid">
+    <div class="feature">
+      <h3>Five native implementations</h3>
+      <p>Go, TypeScript, Java, Swift, and Kotlin — each idiomatic to its ecosystem, not a transliteration, all validated against the same RFC 9421 vectors.</p>
+      <a href="%BASE%/docs/getting-started/typescript/">Getting started ↗</a>
+    </div>
+    <div class="feature">
+      <h3>Every standard algorithm</h3>
+      <p><code>ed25519</code>, <code>ecdsa-p256-sha256</code>, <code>rsa-pss-sha512</code>, and <code>hmac-sha256</code> — the RFC 9421 algorithm set, with raw <code>r‖s</code> ECDSA encoding done for you.</p>
+      <a href="%BASE%/docs/concepts/algorithms/">Algorithms ↗</a>
+    </div>
+    <div class="feature">
+      <h3>Keys that can't be exfiltrated</h3>
+      <p>Back keys with the Secure Enclave, Android Keystore, an HSM, a Cloud KMS, or a non-extractable Web Crypto key. The library only ever asks them to sign.</p>
+      <a href="%BASE%/docs/concepts/key-management/">Key management ↗</a>
+    </div>
+    <div class="feature">
+      <h3>Body integrity, built in</h3>
+      <p>RFC 9530 <code>Content-Digest</code> hashes the body; cover that header in the signature and the body is protected too — without the signer reading the whole stream.</p>
+      <a href="%BASE%/docs/concepts/content-digest/">Content-Digest ↗</a>
+    </div>
+    <div class="feature">
+      <h3>Response &amp; proxy binding</h3>
+      <p>Bind a response to the request that triggered it with <code>;req</code>, and forward through proxies that add their own signature without breaking the client's.</p>
+      <a href="%BASE%/docs/guides/signing-responses/">Response binding ↗</a>
+    </div>
+    <div class="feature">
+      <h3>Drop-in client integrations</h3>
+      <p>Sign automatically through <code>fetch</code>, axios, undici, OkHttp, the JDK HttpClient, Spring WebClient, URLSession, Alamofire, and the Ktor client.</p>
+      <a href="%BASE%/docs/guides/integrations/">Integrations ↗</a>
+    </div>
+  </div>
+</section>
+</div>
+
+<div class="container">
+<section class="explore">
+  <h2>Find your way around</h2>
+  <div class="card-grid">
+    <a class="card" href="%BASE%/playground/"><span class="card-t">Playground</span><span class="card-d">Sign, verify, and inspect RFC 9421 signatures in the browser — like jwt.io, for HTTP signatures.</span></a>
+    <a class="card" href="%BASE%/docs/"><span class="card-t">Introduction</span><span class="card-d">Why sign every request, and how message signatures differ from bearer tokens.</span></a>
+    <a class="card" href="%BASE%/docs/getting-started/typescript/"><span class="card-t">Getting started</span><span class="card-d">Install and sign your first request in your language of choice.</span></a>
+    <a class="card" href="%BASE%/docs/concepts/how-it-works/"><span class="card-t">Concepts</span><span class="card-d">The signature base, components, algorithms, keys, and the security model.</span></a>
+    <a class="card" href="%BASE%/docs/guides/signing/"><span class="card-t">Guides</span><span class="card-d">Signing, verifying, response binding, proxy forwarding, and client wiring.</span></a>
+    <a class="card" href="%BASE%/viz/"><span class="card-t">Diagrams</span><span class="card-d">An interactive visualization of how the signature base — the signed bytes — is assembled.</span></a>
+  </div>
+</section>
+</div>

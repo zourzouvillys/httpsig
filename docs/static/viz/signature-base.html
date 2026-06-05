@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>How the signature base is built · httpsig</title>
+  <link rel="icon" type="image/svg+xml" href="%BASE%/img/favicon.svg" />
+  <link rel="stylesheet" href="%BASE%/viz/viz.css" />
+</head>
+<body>
+<div class="viz-wrap">
+  <nav class="viz-nav">
+    <a class="brand" href="%BASE%/">httpsig</a>
+    <span><a href="%BASE%/viz/">all diagrams</a> &nbsp;·&nbsp; <a href="%BASE%/playground/">open the playground ↗</a></span>
+  </nav>
+
+  <h1 class="viz-title">Building the signature base</h1>
+  <p class="viz-lede">
+    The <b>signature base</b> is the exact byte string that gets signed. For each covered component the
+    signer emits one canonical line — <code>"name": value</code> — in the chosen order, then a final
+    <code>"@signature-params"</code> line listing the covered components and metadata. Toggle components
+    below and watch the base assemble; the verifier rebuilds this <em>identical</em> string to check the
+    signature.
+  </p>
+
+  <div class="checkbox-row" id="toggles">
+    <label><input type="checkbox" data-c="@method" checked /> @method</label>
+    <label><input type="checkbox" data-c="@authority" checked /> @authority</label>
+    <label><input type="checkbox" data-c="@path" checked /> @path</label>
+    <label><input type="checkbox" data-c="@query" /> @query</label>
+    <label><input type="checkbox" data-c="content-type" checked /> content-type</label>
+    <label><input type="checkbox" data-c="content-digest" checked /> content-digest</label>
+  </div>
+
+  <div class="controls">
+    <button class="btn primary" id="replay">↻ replay assembly</button>
+  </div>
+
+  <div class="sb-grid" style="margin-top:1rem">
+    <div class="sb-panel">
+      <h3>HTTP request</h3>
+      <div class="sb-code" id="req"></div>
+    </div>
+    <div class="sb-panel">
+      <h3>signature base (signed bytes)</h3>
+      <div class="sb-code" id="base"></div>
+    </div>
+  </div>
+
+  <p class="note">
+    Order matters and is fixed by <code>Signature-Input</code>: the verifier reads the covered component
+    list and rebuilds the base in the same order. The trailing <code>"@signature-params"</code> line binds
+    the metadata (<code>created</code>, <code>keyid</code>, …) into the signature too. Try it with your own
+    request in the <a href="%BASE%/playground/">playground</a>.
+  </p>
+</div>
+
+<script>
+(() => {
+  if (/(?:[?&#])embed/.test(location.search + location.hash)) document.body.classList.add('embed');
+  const $ = (id) => document.getElementById(id);
+
+  // A sample request (values mirror an RFC 9421-style POST).
+  const REQUEST = [
+    { raw: 'POST /foo?param=value HTTP/1.1', comps: ['@method', '@path', '@query'] },
+    { raw: 'Host: example.com', name: 'host', comps: ['@authority'] },
+    { raw: 'Content-Type: application/json', name: 'content-type', comps: ['content-type'] },
+    { raw: 'Content-Digest: sha-256=:X48E9qO...HytUM=:', name: 'content-digest', comps: ['content-digest'] },
+    { raw: '', comps: [] },
+    { raw: '{"hello": "world"}', comps: [] },
+  ];
+  const VALUES = {
+    '@method': 'POST',
+    '@authority': 'example.com',
+    '@path': '/foo',
+    '@query': '?param=value',
+    'content-type': 'application/json',
+    'content-digest': 'sha-256=:X48E9qO...HytUM=:',
+  };
+  const PARAMS = ';created=1618884473;keyid="my-key";alg="ed25519"';
+
+  function selected() {
+    return [...document.querySelectorAll('#toggles input:checked')].map((i) => i.dataset.c);
+  }
+
+  function renderRequest(litComp) {
+    $('req').innerHTML = REQUEST.map((l) => {
+      const lit = litComp && l.comps.includes(litComp);
+      const safe = l.raw.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+      const name = l.name ? safe.replace(l.raw.split(':')[0], `<span class="hname">${l.raw.split(':')[0]}</span>`) : safe;
+      return `<span class="req-line${lit ? ' lit' : ''}">${name || '&nbsp;'}</span>`;
+    }).join('');
+  }
+
+  let timer = null;
+  function assemble() {
+    if (timer) clearInterval(timer);
+    const comps = selected();
+    const lines = comps.map((c) => ({ cid: c, val: VALUES[c] }));
+    lines.push({ cid: '@signature-params', val: `(${comps.map((c) => `"${c}"`).join(' ')})${PARAMS}`, params: true });
+
+    $('base').innerHTML = '';
+    renderRequest(null);
+    let i = 0;
+    const tick = () => {
+      if (i >= lines.length) { clearInterval(timer); timer = null; renderRequest(null); return; }
+      const ln = lines[i];
+      const el = document.createElement('span');
+      el.className = 'sb-line lit' + (ln.params ? ' params' : '');
+      el.innerHTML = `<span class="cid">"${ln.cid}"</span>: ${ln.val.replace(/&/g, '&amp;').replace(/</g, '&lt;')}`;
+      $('base').appendChild(el);
+      renderRequest(ln.cid);
+      // un-light previous lines
+      [...$('base').children].forEach((c, idx) => { if (idx < i) c.classList.remove('lit'); });
+      i++;
+    };
+    tick();
+    timer = setInterval(tick, 750);
+  }
+
+  document.querySelectorAll('#toggles input').forEach((i) => i.addEventListener('change', assemble));
+  $('replay').onclick = assemble;
+  assemble();
+})();
+</script>
+</body>
+</html>

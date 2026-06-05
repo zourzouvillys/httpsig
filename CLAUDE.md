@@ -21,7 +21,7 @@ httpsig/
   swift/           Swift (HTTPSig, macOS 13+/iOS 16+, SPM, Swift 6.0)
   kotlin/          Kotlin JVM (io.zrz.httpsig, JVM 17+, Gradle)
   testdata/        Shared RFC 9421 test vectors (all languages load these)
-  docs/            Docusaurus documentation site
+  docs/            Static docs site + interactive RFC 9421 playground (custom generator)
   .github/         CI workflows + GitHub templates
 ```
 
@@ -35,8 +35,8 @@ cd java && ./gradlew check
 cd swift && swift test
 cd kotlin && ./gradlew check
 
-# Docs
-cd docs && npm ci && npm run build
+# Docs (uses pnpm)
+cd docs && pnpm install && pnpm build
 ```
 
 ## Architecture
@@ -89,7 +89,7 @@ Each language implements the same core abstractions:
 | `java.yml` | push/PR to `java/**` | Java tests (JDK 17+21) |
 | `swift.yml` | push/PR to `swift/**` | Swift tests (macOS) |
 | `kotlin.yml` | push/PR to `kotlin/**` | Kotlin tests (JDK 17+21) |
-| `docs.yml` | push/PR to `docs/**` | Docs build + GitHub Pages deploy |
+| `docs.yml` | push/PR to `docs/**` or `typescript/**` | Docs build + GitHub Pages deploy |
 | `cross-language.yml` | Weekly (Mon 6am UTC) | All 5 languages test suite |
 | `release-*.yml` | Tag push (`go/v*`, `ts/v*`, etc.) | Release + publish |
 

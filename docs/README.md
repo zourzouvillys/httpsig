@@ -1,76 +1,94 @@
 # httpsig Documentation Site
 
-Docusaurus 3.x site for the httpsig project. Deployed to GitHub Pages at https://zourzouvillys.github.io/httpsig/.
+A small zero-framework static site for the httpsig project, plus an interactive
+in-browser **RFC 9421 playground** (sign / verify / inspect). Built with a custom
+`unified`/`remark`/`rehype` generator — no React, no client framework. Deployed to
+GitHub Pages at https://zrz.io/httpsig/.
 
 ## Prerequisites
 
 - Node.js 20+
-- npm
+- pnpm 10+ (`corepack enable` will provide it)
 
 ## Development
 
 ```bash
 cd docs
-npm install
-npm run start        # dev server at http://localhost:3000/httpsig/
+pnpm install
+pnpm start           # builds with no base path, then serves at http://localhost:8080/
 ```
 
-The dev server hot-reloads on changes to docs, pages, and config.
+`pnpm start` runs `node build.mjs && node serve.mjs`. Re-run it after edits (there is no
+hot-reload — the build is fast).
 
 ## Build
 
 ```bash
-npm run build        # production build into build/
-npm run serve        # serve the production build locally
-npm run typecheck    # check TypeScript types
+pnpm build           # production build into dist/ (base path /httpsig for GitHub Pages)
+pnpm build:local     # build with no base path (for local serving)
+pnpm serve           # serve dist/ at http://localhost:8080
 ```
 
-## Project Structure
+## How it works
+
+`build.mjs`:
+
+1. Renders Markdown in `content/` through a `unified` pipeline (`remark-gfm`,
+   `rehype-slug`, `rehype-autolink-headings`, `rehype-highlight`) into HTML.
+2. Wraps it in `templates/` (`layout.html`, `doc.html`) with `{{var}}` substitution,
+   building the left sidebar from the `DOC_TREE` manifest and the right-hand TOC from
+   the rendered headings.
+3. Renders the landing page (`templates/home.html`) and the playground page
+   (`templates/playground.html`).
+4. Copies `static/` to `dist/`, substituting the `%BASE%` token for the deploy base path.
+5. Bundles the playground tool with **esbuild**: `static/playground/app.ts` plus the
+   local TypeScript library (`../typescript/src`), using a `node:crypto` browser shim and
+   an injected `Buffer` shim so the Web Crypto code paths bundle cleanly.
+
+## Project structure
 
 ```
 docs/
-  docusaurus.config.ts          Site config (URL, navbar, footer, Prism languages)
-  sidebars.ts                   Sidebar navigation structure
-  package.json
-  tsconfig.json
-  src/
-    pages/
-      index.tsx                 Landing page
-      index.module.css          Landing page styles
-    css/
-      custom.css                Global theme overrides
-  docs/
-    intro.md                    Overview / what is RFC 9421
-    getting-started/
-      go.md                     Per-language quick start guides
-      typescript.md
-      java.md
-      swift.md
-      kotlin.md
-    concepts/
-      how-it-works.md           RFC 9421 flow
-      components.md             Derived components (@method, @path, etc.)
-      algorithms.md             Supported algorithms
-      key-management.md         Key types and providers
-      content-digest.md         RFC 9530
-    guides/
-      signing.md                Signing walkthrough
-      verifying.md              Verification walkthrough
-      integrations.md           HTTP client integrations
+  build.mjs                   Static site generator (DOC_TREE manifest + pipeline + esbuild)
+  serve.mjs                   Tiny static dev server (pretty URLs, optional BASE_PATH)
+  templates/
+    layout.html               Page shell: header nav + footer  ({{title}}{{nav}}{{head}}{{body}}{{base}})
+    home.html                 Landing page body
+    doc.html                  Docs shell: sidebar | content | TOC
+    playground.html           The Sign / Verify / Inspect tool body
+  content/
+    intro.md                  Docs landing (/docs/)
+    getting-started/*.md      Per-language quick starts
+    concepts/*.md             RFC 9421/9530 explainers
+    guides/*.md               Signing, verifying, response binding, proxy, integrations
   static/
-    img/                        Favicon, logos
+    styles.css                Warm design system (HSL tokens, light/dark)
+    viz/                       Standalone <canvas> diagrams (viz.css + *.html)
+    playground/
+      playground.css          Tool styles
+      app.ts                  Tool logic (bundled -> dist/playground/app.js)
+      crypto-shim.js          node:crypto browser shim (esbuild alias)
+      buffer-shim.js          Buffer browser shim (esbuild inject)
+  dist/                       Build output (gitignored)
 ```
 
-## Adding Content
+## Adding content
 
-- **New doc page**: Create a `.md` file in the appropriate `docs/` subdirectory. Add it to `sidebars.ts` if it shouldn't be auto-discovered.
-- **New top-level page**: Create a `.tsx` file in `src/pages/`.
-- **Code blocks**: Use fenced code blocks with language tags. Supported syntax highlighting: `go`, `typescript`, `java`, `kotlin`, `swift`, `bash`, `json` (configured in `docusaurus.config.ts` under `prism.additionalLanguages`).
-- **Tabs**: Use Docusaurus `<Tabs>` component for multi-language examples with `groupId="language"` for synced tab state.
+- **New doc page**: add a Markdown file under `content/`, then add an entry to the
+  `DOC_TREE` manifest in `build.mjs` (file path, URL, sidebar label). The page title comes
+  from the first `# H1`.
+- **Cross-links**: link with either a relative `./other.md` path or the page's URL
+  (`/docs/concepts/security/`). Legacy `/section/name` links are rewritten automatically.
+- **Code blocks**: fenced blocks with a language tag; highlighting is auto-detected by
+  `rehype-highlight`.
+- **New diagram**: add a `static/viz/<name>.html` using `viz.css`; it supports `?embed=1`
+  to drop page chrome when iframed. List it in `static/viz/index.html`.
 
 ## Deployment
 
-Deployed automatically via `.github/workflows/docs.yml` on pushes to `main` that touch `docs/**`. Can also be triggered manually from the Actions tab.
+Built and deployed by `.github/workflows/docs.yml` on pushes to `main` touching `docs/**`
+or `typescript/**` (the playground bundles the library source). The workflow runs
+`pnpm install --frozen-lockfile && pnpm build` and publishes `docs/dist` to GitHub Pages.
 
 ## License
 
