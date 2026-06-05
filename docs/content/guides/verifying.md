@@ -233,6 +233,99 @@ try {
 </TabItem>
 </Tabs>
 
+## Replay Protection with Nonce Checking
+
+The `nonceChecker` option in `VerifyOptions` lets you plug in custom replay detection. When a signature includes a `nonce` parameter, the verifier calls your checker after cryptographic verification succeeds. If the checker rejects the nonce (e.g., it was already seen), verification fails.
+
+<Tabs groupId="language">
+<TabItem value="go" label="Go">
+
+```go
+opts := &httpsig.VerifyOptions{
+    RequiredComponents: []httpsig.ComponentIdentifier{
+        httpsig.Component("@method"),
+        httpsig.Component("@authority"),
+    },
+    NonceChecker: func(ctx context.Context, nonce, keyID string, alg httpsig.Algorithm) error {
+        if seen, _ := nonceStore.Exists(ctx, nonce); seen {
+            return fmt.Errorf("nonce already used: %s", nonce)
+        }
+        nonceStore.Record(ctx, nonce)
+        return nil
+    },
+}
+```
+
+</TabItem>
+<TabItem value="typescript" label="TypeScript">
+
+```typescript
+const opts: VerifyOptions = {
+  requiredComponents: [component('@method'), component('@authority')],
+  nonceChecker: async (nonce, keyId, algorithm) => {
+    if (await nonceStore.exists(nonce)) {
+      throw new Error(`nonce already used: ${nonce}`);
+    }
+    await nonceStore.record(nonce);
+  },
+};
+```
+
+</TabItem>
+<TabItem value="java" label="Java">
+
+```java
+var opts = Verifier.VerifyOptions.builder()
+    .requiredComponents(List.of(
+        ComponentIdentifier.of("@method"),
+        ComponentIdentifier.of("@authority")))
+    .nonceChecker((nonce, keyId, algorithm) -> {
+        if (nonceStore.exists(nonce)) {
+            throw new HttpSigException("nonce already used: " + nonce);
+        }
+        nonceStore.record(nonce);
+    })
+    .build();
+```
+
+</TabItem>
+<TabItem value="swift" label="Swift">
+
+```swift
+let opts = VerifyOptions(
+    requiredComponents: [.init("@method"), .init("@authority")],
+    nonceChecker: { nonce, keyId, algorithm in
+        guard !nonceStore.exists(nonce) else {
+            throw HttpSigError.invalidSignature("nonce already used: \(nonce)")
+        }
+        nonceStore.record(nonce)
+    }
+)
+```
+
+</TabItem>
+<TabItem value="kotlin" label="Kotlin">
+
+```kotlin
+val opts = Verifier.VerifyOptions(
+    requiredComponents = listOf(
+        ComponentIdentifier.of("@method"),
+        ComponentIdentifier.of("@authority"),
+    ),
+    nonceChecker = { nonce, keyId, algorithm ->
+        if (nonceStore.exists(nonce)) {
+            throw HttpSigException("nonce already used: $nonce")
+        }
+        nonceStore.record(nonce)
+    },
+)
+```
+
+</TabItem>
+</Tabs>
+
+The nonce value is also available in `VerifyResult.nonce` after successful verification, so you can inspect it even without a checker.
+
 ## Verification Process
 
 Under the hood, `verifyMessage` performs these steps:

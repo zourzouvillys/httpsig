@@ -4,6 +4,7 @@ import type {
   HttpMessage,
   KeyProvider,
   SignatureParameters,
+  SignatureRequirements,
   VerifyOptions,
   VerifyResult,
 } from "./types.js";
@@ -84,7 +85,10 @@ export async function verifyMessage(
       continue;
     }
 
-    if (
+    // Use requirements if set, otherwise fall back to requiredComponents
+    if (opts?.requirements) {
+      if (!matchesRequirements(sigParams, opts.requirements)) continue;
+    } else if (
       opts?.requiredComponents &&
       !hasRequiredComponents(sigParams.components, opts.requiredComponents)
     ) {
@@ -187,6 +191,32 @@ function hasRequiredComponents(
 ): boolean {
   const haveSet = new Set(have.map(serializeComponentId));
   return required.every((c) => haveSet.has(serializeComponentId(c)));
+}
+
+function matchesRequirements(
+  sigParams: SignatureParameters,
+  req: SignatureRequirements,
+): boolean {
+  // Check required components
+  if (
+    req.components.length > 0 &&
+    !hasRequiredComponents(sigParams.components, req.components)
+  ) {
+    return false;
+  }
+  // Check keyId
+  if (req.keyId !== undefined && sigParams.keyId !== req.keyId) {
+    return false;
+  }
+  // Check algorithm
+  if (req.algorithm !== undefined && sigParams.algorithm !== req.algorithm) {
+    return false;
+  }
+  // Check tag
+  if (req.tag !== undefined && sigParams.tag !== req.tag) {
+    return false;
+  }
+  return true;
 }
 
 function checkTimeConstraints(

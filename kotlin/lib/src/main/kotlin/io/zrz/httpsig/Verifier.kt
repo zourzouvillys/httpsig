@@ -23,6 +23,7 @@ object Verifier {
         val requiredLabel: String? = null,
         val now: Supplier<Instant> = Supplier { Instant.now() },
         val nonceChecker: ((nonce: String, keyId: String, algorithm: Algorithm) -> Unit)? = null,
+        val requirements: SignatureRequirements? = null,
     ) {
         companion object {
             fun defaults(): VerifyOptions = VerifyOptions(rejectExpired = true)
@@ -133,13 +134,38 @@ object Verifier {
         val algStr = metaParams["alg"] as? String
         val algorithm = algStr?.let { Algorithm.fromValue(it) }
 
-        // check required components
-        options.requiredComponents?.let { required ->
-            for (req in required) {
+        // check requirements (takes precedence) or fall back to requiredComponents
+        val reqs = options.requirements
+        if (reqs != null) {
+            // check required components from requirements
+            for (req in reqs.components) {
                 val reqSer = SFV.serializeComponentId(req)
                 val found = components.any { SFV.serializeComponentId(it) == reqSer }
                 if (!found) {
                     throw HttpSigException("required component $reqSer not covered")
+                }
+            }
+            // filter by keyId
+            if (reqs.keyId != null && reqs.keyId != keyId) {
+                throw HttpSigException("keyId mismatch: expected '${reqs.keyId}' but signature has '$keyId'")
+            }
+            // filter by algorithm
+            if (reqs.algorithm != null && algorithm != null && reqs.algorithm != algorithm) {
+                throw HttpSigException("algorithm mismatch: expected ${reqs.algorithm.value} but signature has ${algorithm.value}")
+            }
+            // filter by tag
+            val tag = metaParams["tag"] as? String
+            if (reqs.tag != null && reqs.tag != tag) {
+                throw HttpSigException("tag mismatch: expected '${reqs.tag}' but signature has '$tag'")
+            }
+        } else {
+            options.requiredComponents?.let { required ->
+                for (req in required) {
+                    val reqSer = SFV.serializeComponentId(req)
+                    val found = components.any { SFV.serializeComponentId(it) == reqSer }
+                    if (!found) {
+                        throw HttpSigException("required component $reqSer not covered")
+                    }
                 }
             }
         }

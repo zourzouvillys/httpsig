@@ -5,6 +5,11 @@ public struct VerifyOptions: Sendable {
     /// Components that must be covered by the signature.
     public var requiredComponents: [ComponentIdentifier]?
 
+    /// Full signature requirements for filtering (takes precedence over requiredComponents).
+    /// When set, the verifier uses requirements.components for component checks and also
+    /// filters by keyId, algorithm, and tag when those fields are non-nil.
+    public var requirements: SignatureRequirements?
+
     /// Reject signatures older than this (based on created). Nil means no age check.
     public var maxAge: TimeInterval?
 
@@ -26,6 +31,7 @@ public struct VerifyOptions: Sendable {
 
     public init(
         requiredComponents: [ComponentIdentifier]? = nil,
+        requirements: SignatureRequirements? = nil,
         maxAge: TimeInterval? = nil,
         maxClockSkew: TimeInterval? = nil,
         rejectExpired: Bool = true,
@@ -34,6 +40,7 @@ public struct VerifyOptions: Sendable {
         nonceChecker: (@Sendable (String, String, Algorithm) throws -> Void)? = nil
     ) {
         self.requiredComponents = requiredComponents
+        self.requirements = requirements
         self.maxAge = maxAge
         self.maxClockSkew = maxClockSkew
         self.rejectExpired = rejectExpired
@@ -175,8 +182,40 @@ public enum Verifier {
         let algStr: String? = metaParams.getString("alg")
         let algorithm: Algorithm? = algStr.flatMap { Algorithm(rawValue: $0) }
 
-        // Check required components
-        if let required = options.requiredComponents, !required.isEmpty {
+        // Check requirements (takes precedence) or fall back to requiredComponents
+        let tag: String? = metaParams.getString("tag")
+        if let reqs = options.requirements {
+            // Check required components
+            if !reqs.components.isEmpty {
+                let haveSet = Set(components.map { SFV.serializeComponentId($0) })
+                for req in reqs.components {
+                    let reqSer = SFV.serializeComponentId(req)
+                    if !haveSet.contains(reqSer) {
+                        throw HttpSigError.invalidSignature(
+                            "required component \(reqSer) not covered"
+                        )
+                    }
+                }
+            }
+            // Filter by keyId
+            if let reqKeyId = reqs.keyId, keyId != reqKeyId {
+                throw HttpSigError.invalidSignature(
+                    "keyId mismatch: expected '\(reqKeyId)', got '\(keyId ?? "")'"
+                )
+            }
+            // Filter by algorithm
+            if let reqAlg = reqs.algorithm, algorithm != reqAlg {
+                throw HttpSigError.invalidSignature(
+                    "algorithm mismatch: expected '\(reqAlg.rawValue)', got '\(algorithm?.rawValue ?? "")'"
+                )
+            }
+            // Filter by tag
+            if let reqTag = reqs.tag, tag != reqTag {
+                throw HttpSigError.invalidSignature(
+                    "tag mismatch: expected '\(reqTag)', got '\(tag ?? "")'"
+                )
+            }
+        } else if let required = options.requiredComponents, !required.isEmpty {
             let haveSet = Set(components.map { SFV.serializeComponentId($0) })
             for req in required {
                 let reqSer = SFV.serializeComponentId(req)

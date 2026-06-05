@@ -28,6 +28,7 @@ public final class Verifier {
      * @param requiredLabel      if set, only verify the signature with this specific label
      * @param now                clock source for age/expiry checks
      * @param nonceChecker       if set, called after signature verification to validate the nonce
+     * @param requirements       if set, full signature requirements including components, keyId, algorithm, and tag filtering (takes precedence over requiredComponents)
      */
     public record VerifyOptions(
         List<ComponentIdentifier> requiredComponents,
@@ -36,14 +37,31 @@ public final class Verifier {
         Boolean rejectExpired,
         String requiredLabel,
         Supplier<Instant> now,
-        NonceChecker nonceChecker
+        NonceChecker nonceChecker,
+        AcceptSignature.SignatureRequirements requirements
     ) {
         public VerifyOptions {
             if (now == null) now = Instant::now;
         }
 
+        /**
+         * Backward-compatible constructor without requirements.
+         */
+        public VerifyOptions(
+            List<ComponentIdentifier> requiredComponents,
+            Duration maxAge,
+            Duration maxClockSkew,
+            Boolean rejectExpired,
+            String requiredLabel,
+            Supplier<Instant> now,
+            NonceChecker nonceChecker
+        ) {
+            this(requiredComponents, maxAge, maxClockSkew, rejectExpired,
+                 requiredLabel, now, nonceChecker, null);
+        }
+
         public static VerifyOptions defaults() {
-            return new VerifyOptions(null, null, null, true, null, null, null);
+            return new VerifyOptions(null, null, null, true, null, null, null, null);
         }
 
         public static Builder builder() {
@@ -58,6 +76,7 @@ public final class Verifier {
             private String requiredLabel;
             private Supplier<Instant> now;
             private NonceChecker nonceChecker;
+            private AcceptSignature.SignatureRequirements requirements;
 
             private Builder() {}
 
@@ -96,10 +115,16 @@ public final class Verifier {
                 return this;
             }
 
+            public Builder requirements(AcceptSignature.SignatureRequirements requirements) {
+                this.requirements = requirements;
+                return this;
+            }
+
             public VerifyOptions build() {
                 return new VerifyOptions(
                     requiredComponents, maxAge, maxClockSkew,
-                    rejectExpired, requiredLabel, now, nonceChecker
+                    rejectExpired, requiredLabel, now, nonceChecker,
+                    requirements
                 );
             }
         }
@@ -224,8 +249,36 @@ public final class Verifier {
 
         Algorithm algorithm = algStr != null ? Algorithm.fromValue(algStr) : null;
 
-        // check required components
-        if (options.requiredComponents() != null) {
+        // check requirements (takes precedence) or fall back to requiredComponents
+        var reqs = options.requirements();
+        if (reqs != null) {
+            // check required components from requirements
+            for (var req : reqs.components()) {
+                String reqSer = SFV.serializeComponentId(req);
+                boolean found = components.stream()
+                    .anyMatch(c -> SFV.serializeComponentId(c).equals(reqSer));
+                if (!found) {
+                    throw new HttpSigException("required component " + reqSer + " not covered");
+                }
+            }
+            // filter by keyId
+            if (reqs.keyId() != null && !reqs.keyId().equals(keyId)) {
+                throw new HttpSigException("keyId mismatch: expected '" + reqs.keyId()
+                    + "' but signature has '" + keyId + "'");
+            }
+            // filter by algorithm
+            if (reqs.algorithm() != null) {
+                if (algorithm != null && reqs.algorithm() != algorithm) {
+                    throw new HttpSigException("algorithm mismatch: expected " + reqs.algorithm().value()
+                        + " but signature has " + algorithm.value());
+                }
+            }
+            // filter by tag
+            if (reqs.tag() != null && !reqs.tag().equals(tag)) {
+                throw new HttpSigException("tag mismatch: expected '" + reqs.tag()
+                    + "' but signature has '" + tag + "'");
+            }
+        } else if (options.requiredComponents() != null) {
             for (var req : options.requiredComponents()) {
                 String reqSer = SFV.serializeComponentId(req);
                 boolean found = components.stream()
