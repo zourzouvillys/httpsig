@@ -15,7 +15,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "esbuild": "^0.24.0",
+    "esbuild": "^0.28.0",
     "gray-matter": "^4.0.3",
     "rehype-autolink-headings": "^7.1.0",
     "rehype-highlight": "^7.0.1",
