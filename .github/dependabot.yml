@@ -1,0 +1,66 @@
+# Dependabot keeps dependencies current. For GitHub Actions it bumps the pinned
+# commit SHA *and* the `# vX.Y.Z` comment together, so SHA-pinning (see
+# .github/workflows/*) stays secure without going stale. Updates are grouped per
+# ecosystem into a single weekly PR to keep noise low.
+# Note: Swift (SPM) is omitted — Dependabot does not support it.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      github-actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
+
+  - package-ecosystem: npm
+    directory: /docs
+    schedule:
+      interval: weekly
+    groups:
+      docs:
+        patterns: ["*"]
+    commit-message:
+      prefix: docs
+
+  - package-ecosystem: npm
+    directory: /typescript
+    schedule:
+      interval: weekly
+    groups:
+      typescript:
+        patterns: ["*"]
+    commit-message:
+      prefix: ts
+
+  - package-ecosystem: gomod
+    directory: /golang
+    schedule:
+      interval: weekly
+    groups:
+      golang:
+        patterns: ["*"]
+    commit-message:
+      prefix: go
+
+  - package-ecosystem: gradle
+    directory: /java
+    schedule:
+      interval: weekly
+    groups:
+      java:
+        patterns: ["*"]
+    commit-message:
+      prefix: java
+
+  - package-ecosystem: gradle
+    directory: /kotlin
+    schedule:
+      interval: weekly
+    groups:
+      kotlin:
+        patterns: ["*"]
+    commit-message:
+      prefix: kotlin

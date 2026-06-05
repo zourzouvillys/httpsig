@@ -7,6 +7,10 @@ on:
     paths: ['typescript/**', 'testdata/**', '.github/workflows/typescript.yml']
   workflow_dispatch:
 
+# Read-only token: this runs untrusted PR code (npm ci postinstall, tests, build) and needs no write access.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -14,9 +18,9 @@ jobs:
       matrix:
         node-version: ['20', '22']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: ${{ matrix.node-version }}
 

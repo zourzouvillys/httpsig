@@ -7,11 +7,15 @@ on:
     paths: ['swift/**', 'testdata/**', '.github/workflows/swift.yml']
   workflow_dispatch:
 
+# Read-only token: this runs untrusted PR code (build/test) and needs no write access.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Build
         working-directory: swift
