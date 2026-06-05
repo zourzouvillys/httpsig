@@ -15,32 +15,90 @@ A reverse proxy sits between the client and the upstream service. When the clien
 3. **Preserve** the original client signature so the upstream can independently verify the client's identity.
 4. **Add its own signature** covering both the new headers and the original signature, so the upstream knows the proxy vouches for the additions.
 
-```
-Client                     Proxy                       Upstream
-  |                          |                            |
-  |  POST /api               |                            |
-  |  Signature-Input: sig1   |                            |
-  |  Signature: sig1=:...:   |                            |
-  |  ----------------------> |                            |
-  |                          |                            |
-  |          1. Verify sig1 with client's public key      |
-  |          2. Add Forwarded + X-Tenant-Id headers       |
-  |          3. Sign as "proxy" covering new headers      |
-  |             + original sig1 input                     |
-  |                          |                            |
-  |                          |  POST /api                 |
-  |                          |  Forwarded: ...            |
-  |                          |  X-Tenant-Id: acme         |
-  |                          |  Signature-Input: sig1=...,|
-  |                          |                  proxy=... |
-  |                          |  Signature: sig1=:....:,   |
-  |                          |             proxy=:....:   |
-  |                          |  ----------------------->  |
-  |                          |                            |
-  |                          |     4. Verify "proxy" sig  |
-  |                          |     5. Optionally verify   |
-  |                          |        sig1 too            |
-```
+<div class="ladder" id="pxl">
+  <div class="ladder-head">
+    <span class="ladder-actor a-client">Client</span>
+    <span class="ladder-actor a-proxy">Proxy</span>
+    <span class="ladder-actor a-upstream">Upstream</span>
+  </div>
+  <div class="ladder-body">
+    <span class="ladder-life l1"></span><span class="ladder-life l2"></span><span class="ladder-life l3"></span>
+    <ol class="ladder-steps">
+      <li class="ladder-step msg c2p" data-lane="proxy" data-sigs="sig1">
+        <span class="ladder-chip">POST /api &nbsp;·&nbsp; <code>Signature-Input: sig1</code> &nbsp; <code>Signature: sig1</code></span>
+        <span class="ladder-wire"></span>
+      </li>
+      <li class="ladder-step lane-proxy" data-lane="proxy" data-sigs="sig1">
+        <span class="ladder-note"><i class="ladder-who">Proxy</i><b>1.</b>Verify <code>sig1</code> with the client's public key — reject bad requests early</span>
+      </li>
+      <li class="ladder-step lane-proxy" data-lane="proxy" data-sigs="sig1">
+        <span class="ladder-note"><i class="ladder-who">Proxy</i><b>2.</b>Add <code>Forwarded</code> and <code>X-Tenant-Id</code> headers</span>
+      </li>
+      <li class="ladder-step lane-proxy" data-lane="proxy" data-sigs="sig1,proxy">
+        <span class="ladder-note"><i class="ladder-who">Proxy</i><b>3.</b>Sign as <code>proxy</code> — cover the new headers, the request identity, and bind to the client's <code>sig1</code></span>
+      </li>
+      <li class="ladder-step msg p2u" data-lane="upstream" data-sigs="sig1,proxy">
+        <span class="ladder-chip">POST /api &nbsp;·&nbsp; +<code>Forwarded</code> +<code>X-Tenant-Id</code> &nbsp;·&nbsp; <code>Signature-Input: sig1, proxy</code></span>
+        <span class="ladder-wire"></span>
+      </li>
+      <li class="ladder-step lane-upstream" data-lane="upstream" data-sigs="sig1,proxy">
+        <span class="ladder-note"><i class="ladder-who">Upstream</i><b>4.</b>Verify the <code>proxy</code> signature (covers the new headers + the <code>sig1</code> binding)</span>
+      </li>
+      <li class="ladder-step lane-upstream" data-lane="upstream" data-sigs="sig1,proxy">
+        <span class="ladder-note"><i class="ladder-who">Upstream</i><b>5.</b>Optionally verify <code>sig1</code> too, to confirm the original client independently</span>
+      </li>
+    </ol>
+  </div>
+  <div class="ladder-foot">
+    <div class="ladder-controls">
+      <button class="lbtn" data-act="back">◂ Back</button>
+      <button class="lbtn primary" data-act="next">Next ▸</button>
+      <button class="lbtn" data-act="play">▸ Play</button>
+      <button class="lbtn" data-act="reset">↺ Reset</button>
+      <span class="ladder-count"><b class="ladder-i">0</b> / 7</span>
+    </div>
+    <div class="ladder-state">signatures on the message: <span class="ladder-sigs">—</span></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var root = document.getElementById('pxl');
+  if (!root) return;
+  var steps = Array.prototype.slice.call(root.querySelectorAll('.ladder-step'));
+  var actors = { client: root.querySelector('.a-client'), proxy: root.querySelector('.a-proxy'), upstream: root.querySelector('.a-upstream') };
+  var iEl = root.querySelector('.ladder-i');
+  var sigsEl = root.querySelector('.ladder-sigs');
+  var playBtn = root.querySelector('[data-act=play]');
+  var total = steps.length, cur = 0, timer = null;
+  function clearActors() { Object.keys(actors).forEach(function (k) { if (actors[k]) actors[k].classList.remove('on'); }); }
+  function render() {
+    steps.forEach(function (s, idx) { s.classList.toggle('show', idx < cur); s.classList.toggle('active', idx === cur - 1); });
+    clearActors();
+    iEl.textContent = cur;
+    if (cur > 0) {
+      var s = steps[cur - 1];
+      var lane = s.getAttribute('data-lane');
+      if (actors[lane]) actors[lane].classList.add('on');
+      var sigs = (s.getAttribute('data-sigs') || '').split(',').filter(Boolean);
+      sigsEl.innerHTML = sigs.length ? sigs.map(function (x) { return '<span class="sig ' + (x === 'proxy' ? 'sp' : 'sc') + '">' + x + '</span>'; }).join('') : '—';
+    } else { sigsEl.innerHTML = '—'; }
+  }
+  function stop() { if (timer) { clearInterval(timer); timer = null; playBtn.textContent = '▸ Play'; } }
+  function next() { if (cur < total) { cur++; render(); } else { stop(); } }
+  root.querySelector('[data-act=next]').onclick = function () { next(); };
+  root.querySelector('[data-act=back]').onclick = function () { if (cur > 0) { cur--; render(); } stop(); };
+  root.querySelector('[data-act=reset]').onclick = function () { stop(); cur = 0; render(); };
+  playBtn.onclick = function () {
+    if (timer) { stop(); return; }
+    if (cur >= total) cur = 0;
+    playBtn.textContent = '⏸ Pause';
+    timer = setInterval(function () { if (cur >= total) { stop(); return; } cur++; render(); }, 1100);
+    render();
+  };
+  render();
+})();
+</script>
 
 RFC 9421 supports this natively through **multiple signatures** on the same message. Each signature gets a distinct label, its own set of covered components, and its own key. They coexist in the `Signature-Input` and `Signature` dictionary headers.
 
