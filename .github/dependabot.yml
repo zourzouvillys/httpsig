@@ -1,7 +1,9 @@
 # Dependabot keeps dependencies current. For GitHub Actions it bumps the pinned
 # commit SHA *and* the `# vX.Y.Z` comment together, so SHA-pinning (see
 # .github/workflows/*) stays secure without going stale. Updates are grouped per
-# ecosystem into a single weekly PR to keep noise low.
+# ecosystem into a single weekly PR to keep noise low, and held for a 48h cooldown
+# after a release so freshly-published (and potentially compromised) versions are
+# not adopted immediately. The npm ecosystem reads pnpm-lock.yaml.
 # Note: Swift (SPM) is omitted — Dependabot does not support it.
 version: 2
 updates:
@@ -9,6 +11,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 2
     groups:
       github-actions:
         patterns: ["*"]
@@ -19,6 +23,8 @@ updates:
     directory: /docs
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 2
     groups:
       docs:
         patterns: ["*"]
@@ -29,6 +35,8 @@ updates:
     directory: /typescript
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 2
     groups:
       typescript:
         patterns: ["*"]
@@ -39,6 +47,8 @@ updates:
     directory: /golang
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 2
     groups:
       golang:
         patterns: ["*"]
@@ -49,6 +59,8 @@ updates:
     directory: /java
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 2
     groups:
       java:
         patterns: ["*"]
@@ -59,6 +71,8 @@ updates:
     directory: /kotlin
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 2
     groups:
       kotlin:
         patterns: ["*"]

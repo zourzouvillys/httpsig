@@ -8,25 +8,25 @@ GitHub Pages at https://zrz.io/httpsig/.
 ## Prerequisites
 
 - Node.js 20+
-- npm
+- pnpm 10+ (`corepack enable` will provide it)
 
 ## Development
 
 ```bash
 cd docs
-npm install
-npm start            # builds with no base path, then serves at http://localhost:8080/
+pnpm install
+pnpm start           # builds with no base path, then serves at http://localhost:8080/
 ```
 
-`npm start` runs `node build.mjs && node serve.mjs`. Re-run it after edits (there is no
+`pnpm start` runs `node build.mjs && node serve.mjs`. Re-run it after edits (there is no
 hot-reload — the build is fast).
 
 ## Build
 
 ```bash
-npm run build        # production build into dist/ (base path /httpsig for GitHub Pages)
-npm run build:local  # build with no base path (for local serving)
-npm run serve        # serve dist/ at http://localhost:8080
+pnpm build           # production build into dist/ (base path /httpsig for GitHub Pages)
+pnpm build:local     # build with no base path (for local serving)
+pnpm serve           # serve dist/ at http://localhost:8080
 ```
 
 ## How it works
@@ -88,7 +88,7 @@ docs/
 
 Built and deployed by `.github/workflows/docs.yml` on pushes to `main` touching `docs/**`
 or `typescript/**` (the playground bundles the library source). The workflow runs
-`npm ci && npm run build` and publishes `docs/dist` to GitHub Pages.
+`pnpm install --frozen-lockfile && pnpm build` and publishes `docs/dist` to GitHub Pages.
 
 ## License
 

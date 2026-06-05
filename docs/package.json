@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Documentation site and interactive tool for httpsig (RFC 9421 / RFC 9530).",
+  "packageManager": "pnpm@10.33.2",
   "scripts": {
     "build": "BASE_PATH=/httpsig node build.mjs",
     "build:local": "node build.mjs",
@@ -24,5 +25,8 @@
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.1",
     "unified": "^11.0.5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild"]
   }
 }

@@ -74,6 +74,7 @@ const DOC_TREE = [
       { file: 'guides/signing.md', url: '/docs/guides/signing/', label: 'Signing requests' },
       { file: 'guides/verifying.md', url: '/docs/guides/verifying/', label: 'Verifying signatures' },
       { file: 'guides/signing-responses.md', url: '/docs/guides/signing-responses/', label: 'Signing responses' },
+      { file: 'guides/accept-signature.md', url: '/docs/guides/accept-signature/', label: 'Signature negotiation' },
       { file: 'guides/integrations.md', url: '/docs/guides/integrations/', label: 'Client integrations' },
       { file: 'guides/proxy-forwarding.md', url: '/docs/guides/proxy-forwarding/', label: 'Proxy forwarding' },
     ],

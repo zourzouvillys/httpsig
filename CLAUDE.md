@@ -35,8 +35,8 @@ cd java && ./gradlew check
 cd swift && swift test
 cd kotlin && ./gradlew check
 
-# Docs
-cd docs && npm ci && npm run build
+# Docs (uses pnpm)
+cd docs && pnpm install && pnpm build
 ```
 
 ## Architecture

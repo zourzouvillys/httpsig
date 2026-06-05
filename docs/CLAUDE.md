@@ -7,13 +7,14 @@ in-browser RFC 9421 playground.
 
 ```bash
 cd docs
-npm install
-npm start            # build (no base path) + serve at http://localhost:8080
-npm run build        # production build into dist/ (base path /httpsig)
-npm run serve        # serve dist/ locally
+pnpm install
+pnpm start           # build (no base path) + serve at http://localhost:8080
+pnpm build           # production build into dist/ (base path /httpsig)
+pnpm serve           # serve dist/ locally
 ```
 
-There is no hot-reload — re-run `npm start` after edits. The build is fast.
+There is no hot-reload — re-run `pnpm start` after edits. The build is fast.
+Uses pnpm (`packageManager` is pinned in package.json; `corepack enable` provides it).
 
 ## How it works
 
@@ -63,5 +64,5 @@ There is no hot-reload — re-run `npm start` after edits. The build is fast.
 
 ## Deployment
 
-`.github/workflows/docs.yml` runs `npm ci && npm run build` and publishes `docs/dist` to GitHub
+`.github/workflows/docs.yml` runs `pnpm install --frozen-lockfile && pnpm build` and publishes `docs/dist` to GitHub
 Pages on pushes to `main` touching `docs/**` or `typescript/**`.
