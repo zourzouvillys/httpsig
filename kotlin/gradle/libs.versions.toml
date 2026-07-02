@@ -1,9 +1,9 @@
 [versions]
 kotlin = "2.4.0"
-junit = "6.1.0"
+junit = "6.1.1"
 jackson = "2.22.0"
 okhttp = "5.4.0"
-ktor = "3.5.0"
+ktor = "3.5.1"
 kotlinx-coroutines = "1.11.0"
 
 [libraries]
