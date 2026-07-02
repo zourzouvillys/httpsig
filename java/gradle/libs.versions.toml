@@ -1,5 +1,5 @@
 [versions]
-junit = "6.1.0"
+junit = "6.1.1"
 jackson = "2.22.0"
 okhttp = "5.4.0"
 spring-webflux = "7.0.8"
