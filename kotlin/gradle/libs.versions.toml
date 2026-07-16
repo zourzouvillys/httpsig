@@ -1,7 +1,7 @@
 [versions]
-kotlin = "2.4.0"
-junit = "6.1.1"
-jackson = "2.22.0"
+kotlin = "2.4.10"
+junit = "6.1.2"
+jackson = "2.22.1"
 okhttp = "5.4.0"
 ktor = "3.5.1"
 kotlinx-coroutines = "1.11.0"
