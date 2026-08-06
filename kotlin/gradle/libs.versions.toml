@@ -3,7 +3,7 @@ kotlin = "2.4.10"
 junit = "6.1.2"
 jackson = "2.22.1"
 okhttp = "5.4.0"
-ktor = "3.5.1"
+ktor = "3.5.2"
 kotlinx-coroutines = "1.11.0"
 
 [libraries]
