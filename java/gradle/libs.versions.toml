@@ -1,7 +1,7 @@
 [versions]
 junit = "6.1.3"
-jackson = "2.22.1"
-okhttp = "5.4.0"
+jackson = "2.22.2"
+okhttp = "5.5.0"
 spring-webflux = "7.0.8"
 
 [libraries]
